@@ -1,4 +1,4 @@
-export const API_BASE = "https://alabamabeachflag-api.sparkelectricalservicesllc.workers.dev";
+export const API_BASE = "/admin/service";
 export const SEVERITIES = ["information", "notice", "important", "critical"];
 
 export const TEMPLATES = {
