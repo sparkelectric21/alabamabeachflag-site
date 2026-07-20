@@ -1,4 +1,4 @@
-import { API_BASE, TEMPLATES, expirationForPreset, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js";
+import { API_BASE, TEMPLATES, expirationForPreset, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260720-2";
 
 const $ = (selector) => document.querySelector(selector);
 const form = $("#announcement-form");
