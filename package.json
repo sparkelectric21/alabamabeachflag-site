@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check admin/admin.js && node --check admin/core.js && npm test"
+    "check": "node --check admin/admin.js && node --check admin/core.js && node --check admin/provider-health/provider-health.js && node --check admin/verification/verification.js && npm test"
   }
 }
