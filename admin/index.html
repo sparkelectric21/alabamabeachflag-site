@@ -8,12 +8,13 @@
   <title>Announcement Manager · Alabama Beach Flag</title>
   <link rel="icon" href="../favicon.png">
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="provider-health/provider-health.css">
   <script type="module" src="admin.js?v=20260720-2"></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../"><img src="../logo-280.png" alt="" width="46" height="46"><span><strong>Alabama Beach Flag</strong><small>Announcement Manager</small></span></a>
-    <button id="refresh" class="button secondary" type="button">Refresh status</button>
+    <nav class="admin-nav" aria-label="Admin sections"><a aria-current="page" href="./">Announcements</a><a href="provider-health/">Provider health</a><button id="refresh" class="button secondary" type="button">Refresh status</button></nav>
   </header>
   <main class="shell">
     <div id="alert" class="alert" role="status" aria-live="polite" hidden></div>
