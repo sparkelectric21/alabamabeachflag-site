@@ -1,0 +1,12 @@
+.audit-panel { margin-top: 24px; }
+.audit-status { background: #f4f8fa; border-radius: 10px; color: var(--muted); padding: 14px; }
+.audit-status.error { background: #ffebee; color: #8a1c2b; }
+.audit-records { display: grid; gap: 14px; }
+.audit-record { border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.audit-record h3 { color: var(--navy); font-size: 1rem; margin: 0 0 12px; }
+.audit-record .status-list { grid-template-columns: minmax(105px, auto) 1fr; }
+.audit-record time { font: inherit; }
+.audit-panel > #load-more-audit { margin-top: 16px; }
+#typed-confirmation { margin-top: 18px; }
+#typed-confirmation label { display: flex; flex-direction: column; font-size: .92rem; font-weight: 650; gap: 7px; }
+#typed-confirmation .fine-print { margin: 7px 0 0; }
