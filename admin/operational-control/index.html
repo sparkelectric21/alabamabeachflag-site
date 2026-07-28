@@ -9,14 +9,16 @@
   <link rel="icon" href="../../favicon.png">
   <link rel="stylesheet" href="../admin.css">
   <link rel="stylesheet" href="operational-control.css">
+  <link rel="stylesheet" href="../responsive.css">
+  <script type="module" src="../navigation.js"></script>
   <script type="module" src="operational-control.js"></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../../"><img src="../../logo-280.png" alt="" width="46" height="46"><span><strong>Alabama Beach Flag</strong><small>Operational Control</small></span></a>
-    <nav class="admin-nav" aria-label="Admin sections">
-      <div class="nav-links"><a href="../">Announcements</a><a href="../provider-health/">Provider health</a><a href="../verification/">Verification</a><a aria-current="page" href="./">Controls</a></div>
-      <button id="refresh" class="button secondary refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh</button>
+    <nav class="admin-nav" aria-label="Admin sections" data-open="false">
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-sections"><span class="nav-toggle-label">Controls</span><span class="nav-toggle-icon" aria-hidden="true">☰</span></button>
+      <div class="nav-links" id="admin-sections"><a href="../">Announcements</a><a href="../provider-health/">Provider health</a><a href="../verification/">Verification</a><a aria-current="page" href="./">Controls</a><button id="refresh" class="button secondary refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh</button></div>
     </nav>
   </header>
   <main class="shell">
