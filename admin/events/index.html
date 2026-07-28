@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+  <title>Beach Events · Alabama Beach Flag</title>
+  <link rel="icon" href="../../favicon.png"><link rel="stylesheet" href="../admin.css"><link rel="stylesheet" href="events.css"><link rel="stylesheet" href="../responsive.css">
+  <script type="module" src="../navigation.js"></script><script type="module" src="events.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="../../"><img src="../../logo-280.png" alt="" width="46" height="46"><span><strong>Alabama Beach Flag</strong><small>Beach Activity &amp; Event Impact</small></span></a>
+    <nav class="admin-nav" aria-label="Admin sections" data-open="false"><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-sections"><span class="nav-toggle-label">Events</span><span class="nav-toggle-icon" aria-hidden="true">☰</span></button><div class="nav-links" id="admin-sections"><a href="../">Announcements</a><a aria-current="page" href="./">Events</a><a href="../provider-health/">Provider health</a><a href="../verification/">Verification</a><a href="../operational-control/">Controls</a><button id="refresh" class="button secondary" type="button">Refresh</button></div></nav>
+  </header>
+  <main class="shell">
+    <div id="alert" class="alert" role="status" aria-live="polite" hidden></div>
+    <section class="intro"><div><p class="eyebrow">Exact beach only</p><h1>Beach events</h1><p>Review official-source discoveries, manage scheduled impacts, and create local records. Nothing publishes automatically unless a narrowly scoped approval rule allows it.</p></div><button id="new-event" class="button primary" type="button">Create event</button></section>
+    <section class="event-stats" aria-label="Event status summary" id="stats"></section>
+    <div class="event-layout">
+      <aside class="panel filters"><h2>Review queue</h2><label>Status<select id="status-filter"><option value="">All states</option><option value="pendingReview">Pending Review</option><option value="approved">Approved</option><option value="scheduled">Scheduled</option><option value="published">Published</option><option value="disregarded">Disregarded</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></label><label>Search<input id="search" type="search" placeholder="Title, venue, source"></label><button id="rules-button" class="button secondary full" type="button">Approval &amp; ignore rules</button></aside>
+      <section class="panel"><div class="panel-heading"><div><p class="eyebrow">Discovered and managed</p><h2>Events</h2></div><span id="count" class="badge">Loading</span></div><div id="events" class="event-list" aria-live="polite"></div></section>
+    </div>
+  </main>
+
+  <dialog id="event-dialog"><form id="event-form"><input id="event-id" type="hidden"><div class="dialog-heading"><div><p class="eyebrow">Local event record</p><h2 id="form-title">Create event</h2></div><button class="icon-close" type="button" data-close aria-label="Close">×</button></div>
+    <div class="form-grid"><label class="span-2">Event title<input id="title" maxlength="160" required></label><label>Beach location<select id="beach" required></select></label><label>Venue<input id="venue" maxlength="200" required></label><label class="span-2">Address<input id="address" maxlength="240"></label><label>Start<input id="start" type="datetime-local" required></label><label>End<input id="end" type="datetime-local" required></label><label class="choice"><input id="all-day" type="checkbox"> All-day event</label><span></span>
+      <label>Event type<select id="event-type"></select></label><label>Impact level<select id="impact"></select></label><label>Source or organizer<input id="source" maxlength="160" required></label><label>Official HTTPS URL<input id="url" type="url" required placeholder="https://"></label>
+      <label class="span-2">Banner title<input id="banner-title" maxlength="100" required></label><label class="span-2">Banner message<textarea id="banner-message" maxlength="300" rows="3" required></textarea></label>
+      <fieldset class="span-2 impact-checks"><legend>Visit impact</legend><label class="choice"><input id="parking" type="checkbox"> Parking impact</label><label class="choice"><input id="traffic" type="checkbox"> Traffic impact</label><label class="choice"><input id="access" type="checkbox"> Access impact</label><label class="choice"><input id="compare" type="checkbox"> Show “Compare nearby beaches”</label><label class="choice"><input id="night-before" type="checkbox"> Start displaying the night before</label></fieldset>
+      <label>Publish status<select id="publish-status"><option value="draft">Draft</option><option value="approved">Approved</option><option value="scheduled">Scheduled</option><option value="published">Published</option><option value="hidden">Hidden</option><option value="cancelled">Cancelled</option><option value="disregarded">Disregarded</option></select></label><label>Scheduled display<input id="display-from" type="datetime-local"></label><label class="span-2">Internal notes<textarea id="notes" maxlength="2000" rows="3"></textarea></label>
+    </div><div class="dialog-actions"><button class="button secondary" type="button" data-close>Cancel</button><button id="save-event" class="button primary" type="submit">Save event</button></div></form></dialog>
+
+  <dialog id="review-dialog"><div id="review-content"></div></dialog>
+  <dialog id="rules-dialog"><div class="dialog-heading"><div><p class="eyebrow">Decision memory</p><h2>Approval &amp; ignore rules</h2></div><button class="icon-close" type="button" data-close aria-label="Close">×</button></div><p class="muted">Auto-approval requires an exact provider, venue, and beach. Use ignore rules for recurring non-beach or low-value patterns.</p><div id="rules"></div></dialog>
+</body></html>

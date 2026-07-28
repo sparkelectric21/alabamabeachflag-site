@@ -5,8 +5,11 @@ const label = (value) => String(value).replaceAll(".", " › ").replaceAll(/([A-
 const CONTROL_DETAILS = {
   "global.liveData": { name: "Global live data", description: "Master control for all live beach-flag data.", glyph: "◎", scope: "All live flag providers and beaches", providers: "Gulf Shores and Orange Beach", beaches: "All official locations", inherited: "Includes Fort Morgan through Gulf Shores" },
   "domains.beachFlags": { name: "Beach flags domain", description: "Controls the public beach-flag data domain.", glyph: "◇", scope: "All beach-flag locations", providers: "Gulf Shores and Orange Beach", beaches: "All official locations", inherited: "Includes Fort Morgan through Gulf Shores" },
+  "domains.beachEvents": { name: "Beach events domain", description: "Isolated Beach Activity & Event Impact control.", glyph: "◷", scope: "Scheduled events only", providers: "All event providers", beaches: "Exact matches only", inherited: "Never affects beach conditions" },
   "providers.gulfShoresFlags": { name: "Gulf Shores flags", description: "Provider control for Gulf Shores and its inherited scope.", glyph: "≈", scope: "Gulf Shores provider", providers: "Gulf Shores", beaches: "Gulf Shores locations", inherited: "Fort Morgan is included" },
-  "providers.orangeBeachFlags": { name: "Orange Beach flags", description: "Independent provider control for Orange Beach locations.", glyph: "≈", scope: "Orange Beach provider", providers: "Orange Beach", beaches: "Orange Beach locations only", inherited: "None — independent control" }
+  "providers.orangeBeachFlags": { name: "Orange Beach flags", description: "Independent provider control for Orange Beach locations.", glyph: "≈", scope: "Orange Beach provider", providers: "Orange Beach", beaches: "Orange Beach locations only", inherited: "None — independent control" },
+  "providers.gulfShoresEvents": { name: "Gulf Shores events", description: "Official City of Gulf Shores discovery.", glyph: "◷", scope: "Event provider", providers: "Gulf Shores", beaches: "Exact matches only", inherited: "None" },
+  "providers.orangeBeachEvents": { name: "Orange Beach events", description: "Official City of Orange Beach discovery.", glyph: "◷", scope: "Event provider", providers: "Orange Beach", beaches: "Exact matches only", inherited: "None" }
 };
 const stateLabel = (state) => ({ enabled: "Enabled", monitorOnly: "Monitor only", disabled: "Disabled" })[state] ?? label(state);
 const stateClass = (state) => ({ enabled: "enabled", monitorOnly: "monitor-only", disabled: "disabled" })[state] ?? "unknown";

@@ -4,8 +4,11 @@ export const AUDIT_ENDPOINT = `${CONTROL_ENDPOINT}/audit`;
 export const IMPACT = {
   "global.liveData": "All live flag providers and beaches",
   "domains.beachFlags": "All beach-flag locations",
+  "domains.beachEvents": "Beach Activity & Event Impact only",
   "providers.gulfShoresFlags": "Gulf Shores locations and inherited Fort Morgan",
-  "providers.orangeBeachFlags": "Orange Beach locations only"
+  "providers.orangeBeachFlags": "Orange Beach locations only",
+  "providers.gulfShoresEvents": "City of Gulf Shores event discovery only",
+  "providers.orangeBeachEvents": "City of Orange Beach event discovery only"
 };
 
 export function expiryForPreset(preset, now = new Date()) {
@@ -27,13 +30,14 @@ export function validateTransition(draft, now = new Date()) {
 }
 
 export function requiresCriticalConfirmation(controlId, state) {
-  return state === "disabled" && ["global.liveData", "domains.beachFlags"].includes(controlId);
+  return state === "disabled" && ["global.liveData", "domains.beachFlags", "domains.beachEvents"].includes(controlId);
 }
 
 export function criticalConfirmationPhrase(controlId, state) {
   if (state !== "disabled") return null;
   if (controlId === "global.liveData") return "DISABLE LIVE DATA";
   if (controlId === "domains.beachFlags") return "DISABLE BEACH FLAGS";
+  if (controlId === "domains.beachEvents") return "DISABLE BEACH EVENTS";
   return null;
 }
 
