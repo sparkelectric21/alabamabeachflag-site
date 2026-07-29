@@ -55,6 +55,10 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(js, /Assignment creates a pending-review event\. It never publishes directly\./);
   assert.match(js, /No active provider coverage/);
   assert.match(js, /reasonDetail/);
+  assert.match(js, /\["Source note",event\.sourceNote\]/);
+  assert.match(js, /\["Newsletter issue",event\.sourceNewsletterMonth\]/);
+  assert.match(js, /\["Contact or registration",event\.contactInformation\]/);
+  assert.match(js, /event\.endTimeUnavailable/);
   assert.match(js, /updateBannerPreview/);
   assert.match(js, /control\.disabled=true/);
   assert.match(js, /Refresh status unavailable/);
