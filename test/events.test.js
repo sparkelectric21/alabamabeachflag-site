@@ -39,6 +39,8 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(html, /Excluded/);
   assert.match(html, /assignment-dialog/);
   assert.match(html, /aria-live="polite"/);
+  assert.match(html, /option value="pendingReview">Pending Review/);
+  assert.match(html, /form-beach-reference/);
   assert.match(js, /\/internal\/refresh\/beach-events/);
   assert.match(js, /Assignment creates a pending-review event\. It never publishes directly\./);
   assert.match(js, /No active provider coverage/);
@@ -46,9 +48,15 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(js, /updateBannerPreview/);
   assert.match(js, /control\.disabled=true/);
   assert.match(js, /Refresh status unavailable/);
+  assert.match(js, /save\.textContent="Saving…"/);
+  assert.match(js, /renderBeachReference/);
+  assert.match(js, /secondary-actions/);
+  assert.match(js, /model\.coverage\.filter\(item=>item\.activeEvents>0\)/);
   assert.match(css, /overflow-wrap:anywhere/);
   assert.match(css, /max-width:600px/);
   assert.match(css, /min-height:44px/);
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /focus-visible/);
+  assert.match(css, /review-scroll/);
+  assert.match(css, /env\(safe-area-inset-bottom\)/);
 });
