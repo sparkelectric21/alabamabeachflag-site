@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { statusSummary, validateEventDraft } from "../admin/events/core.js";
+import { refreshEmptyState, statusSummary, validateEventDraft } from "../admin/events/core.js";
 
 const valid = {
   title: "Beach Cleanup", beachId: "gulf-shores-public-beach", venue: "Gulf Place",
@@ -17,4 +17,27 @@ test("manual event validation requires exact fields, ordered dates, known classi
 
 test("event status summary supports the review dashboard", () => {
   assert.deepEqual(statusSummary([{ status: "pendingReview" }, { status: "published" }, { status: "pendingReview" }]), { pendingReview: 2, published: 1 });
+});
+
+test("refresh status card explains every important empty state", () => {
+  assert.equal(refreshEmptyState(null), "Refresh has not run yet");
+  assert.equal(refreshEmptyState({ status: "disabled" }), "Beach event ingestion is disabled");
+  assert.equal(refreshEmptyState({ status: "monitorOnly" }), "Provider is in monitor-only mode");
+  assert.equal(refreshEmptyState({ status: "failed" }), "Provider refresh failed");
+  assert.equal(refreshEmptyState({ status: "healthy", counts: { raw: 0 } }), "Refresh succeeded, but no beach-specific events were found");
+  assert.equal(refreshEmptyState({ status: "healthy", counts: { raw: 4, matched: 0 } }), "Events were fetched, but none matched a supported beach");
+});
+
+test("events admin exposes protected manual refresh and responsive status layout", async () => {
+  const fs = await import("node:fs/promises");
+  const html = await fs.readFile(new URL("../admin/events/index.html", import.meta.url), "utf8");
+  const js = await fs.readFile(new URL("../admin/events/events.js", import.meta.url), "utf8");
+  const css = await fs.readFile(new URL("../admin/events/events.css", import.meta.url), "utf8");
+  assert.match(html, /Source Refresh/);
+  assert.match(html, /Refresh event sources/);
+  assert.match(js, /\/internal\/refresh\/beach-events/);
+  assert.match(js, /control\.disabled=true/);
+  assert.match(js, /Refresh status unavailable/);
+  assert.match(css, /overflow-wrap:anywhere/);
+  assert.match(css, /max-width:600px/);
 });

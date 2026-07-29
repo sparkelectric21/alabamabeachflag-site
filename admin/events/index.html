@@ -14,6 +14,12 @@
   <main class="shell">
     <div id="alert" class="alert" role="status" aria-live="polite" hidden></div>
     <section class="intro"><div><p class="eyebrow">Exact beach only</p><h1>Beach events</h1><p>Review official-source discoveries, manage scheduled impacts, and create local records. Nothing publishes automatically unless a narrowly scoped approval rule allows it.</p></div><button id="new-event" class="button primary" type="button">Create event</button></section>
+    <section class="panel refresh-panel" aria-labelledby="refresh-title">
+      <div class="panel-heading"><div><p class="eyebrow">Import status</p><h2 id="refresh-title">Source Refresh</h2></div><button id="refresh-sources" class="button secondary" type="button">Refresh event sources</button></div>
+      <p id="refresh-summary" class="refresh-summary">Loading refresh status…</p>
+      <div id="refresh-details" class="refresh-details"></div>
+      <div id="provider-refresh" class="provider-refresh"></div>
+    </section>
     <section class="event-stats" aria-label="Event status summary" id="stats"></section>
     <div class="event-layout">
       <aside class="panel filters"><h2>Review queue</h2><label>Status<select id="status-filter"><option value="">All states</option><option value="pendingReview">Pending Review</option><option value="approved">Approved</option><option value="scheduled">Scheduled</option><option value="published">Published</option><option value="disregarded">Disregarded</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></label><label>Search<input id="search" type="search" placeholder="Title, venue, source"></label><button id="rules-button" class="button secondary full" type="button">Approval &amp; ignore rules</button></aside>

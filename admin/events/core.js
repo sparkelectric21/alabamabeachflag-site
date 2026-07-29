@@ -21,3 +21,13 @@ export function statusSummary(events) {
     return result;
   }, {});
 }
+
+export function refreshEmptyState(refresh) {
+  if (!refresh || refresh.status === "neverRun") return "Refresh has not run yet";
+  if (refresh.status === "disabled") return "Beach event ingestion is disabled";
+  if (refresh.status === "monitorOnly") return "Provider is in monitor-only mode";
+  if (refresh.status === "failed") return "Provider refresh failed";
+  if (refresh.counts?.raw === 0) return "Refresh succeeded, but no beach-specific events were found";
+  if (refresh.counts?.matched === 0) return "Events were fetched, but none matched a supported beach";
+  return "Official event sources refreshed";
+}
