@@ -34,6 +34,12 @@ test("events admin exposes protected manual refresh and responsive status layout
   const js = await fs.readFile(new URL("../admin/events/events.js", import.meta.url), "utf8");
   const css = await fs.readFile(new URL("../admin/events/events.css", import.meta.url), "utf8");
   assert.match(html, /Source Refresh/);
+  assert.match(html, /Beach Activity Notifications/);
+  assert.match(html, /Send test email/);
+  assert.match(html, /Send review summary now/);
+  assert.match(html, /Beach Activity Notifications/);
+  assert.match(html, /Send test email/);
+  assert.match(html, /Send review summary now/);
   assert.match(html, /Refresh event sources/);
   assert.match(html, /Beach coverage/);
   assert.match(html, /Excluded/);
@@ -42,6 +48,10 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(html, /option value="pendingReview">Pending Review/);
   assert.match(html, /form-beach-reference/);
   assert.match(js, /\/internal\/refresh\/beach-events/);
+  assert.match(js, /\/admin\/beach-events\/notifications/);
+  assert.match(js, /suppressedDuplicateCount/);
+  assert.match(js, /\/admin\/beach-events\/notifications/);
+  assert.match(js, /suppressedDuplicateCount/);
   assert.match(js, /Assignment creates a pending-review event\. It never publishes directly\./);
   assert.match(js, /No active provider coverage/);
   assert.match(js, /reasonDetail/);

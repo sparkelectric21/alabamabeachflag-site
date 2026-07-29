@@ -20,6 +20,21 @@
       <div id="refresh-details" class="refresh-details"></div>
       <div id="provider-refresh" class="provider-refresh"></div>
     </section>
+    <section class="panel notification-panel" aria-labelledby="notification-title">
+      <div class="panel-heading"><div><p class="eyebrow">Review alerts</p><h2 id="notification-title">Beach Activity Notifications</h2></div><span id="notification-status" class="badge">Loading</span></div>
+      <p class="muted">Change-based summaries and one Central-time morning reminder use the application’s protected email configuration.</p>
+      <form id="notification-form">
+        <div class="notification-options">
+          <label class="choice"><input id="notification-enabled" type="checkbox"> Enabled</label>
+          <label class="choice"><input id="notification-daily" type="checkbox"> Daily reminder</label>
+          <label class="choice"><input id="notification-immediate" type="checkbox"> Immediate change notification</label>
+          <label>Reminder time<input id="notification-time" type="time" step="900" required></label>
+          <label class="span-2">Notification recipients<input id="notification-recipients" type="text" inputmode="email" required><small>Comma-separated verified recipients configured for this Worker.</small></label>
+        </div>
+        <div id="notification-details" class="notification-details"></div>
+        <div class="notification-actions"><button id="save-notifications" class="button primary" type="submit">Save notification settings</button><button id="send-notification-test" class="button secondary" type="button">Send test email</button><button id="send-review-summary" class="button secondary" type="button">Send review summary now</button></div>
+      </form>
+    </section>
     <section aria-labelledby="overview-title"><div class="section-heading compact"><p class="eyebrow">At a glance</p><h2 id="overview-title">Overview</h2></div><section class="event-stats" aria-label="Event status summary" id="stats"></section></section>
     <section class="panel coverage-panel" aria-labelledby="coverage-title"><div class="panel-heading"><div><p class="eyebrow">Exact-location discovery</p><h2 id="coverage-title">Beach coverage</h2></div><span class="muted">Coverage describes source capability, not crowds or parking.</span></div><div id="coverage" class="coverage-grid"></div></section>
     <div class="event-layout">
