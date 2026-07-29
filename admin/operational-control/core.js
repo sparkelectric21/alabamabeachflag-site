@@ -6,6 +6,7 @@ export const IMPACT = {
   "global.liveData": "All live flag providers and beaches",
   "domains.beachFlags": "All beach-flag locations",
   "domains.beachEvents": "Beach Activity & Event Impact only",
+  "notifications.beachActivity": "Beach Activity review email delivery only",
   "providers.gulfShoresFlags": "Gulf Shores locations and inherited Fort Morgan",
   "providers.orangeBeachFlags": "Orange Beach locations only",
   "providers.gulfShoresEvents": "City of Gulf Shores event discovery only",
