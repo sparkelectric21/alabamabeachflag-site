@@ -1,5 +1,6 @@
 export const CONTROL_ENDPOINT = "/admin/service/admin/operational-control";
 export const AUDIT_ENDPOINT = `${CONTROL_ENDPOINT}/audit`;
+export const PUBLIC_CONFIGURATION_ENDPOINT = "/admin/service/v1/app-configuration";
 
 export const IMPACT = {
   "global.liveData": "All live flag providers and beaches",
@@ -14,6 +15,19 @@ export const IMPACT = {
 export function expiryForPreset(preset, now = new Date()) {
   const minutes = { "30m": 30, "1h": 60, "6h": 360 }[preset];
   return minutes ? new Date(now.getTime() + minutes * 60_000).toISOString() : null;
+}
+
+export function summarizeControls(controls, now = new Date()) {
+  const values = Object.values(controls ?? {});
+  const monitorOnly = values.filter((value) => value?.state === "monitorOnly" && (!value.expiresAt || new Date(value.expiresAt) > now)).length;
+  const expiredReview = values.filter((value) => value?.state !== "enabled" && value?.onExpiry === "require_review" && value.expiresAt && new Date(value.expiresAt) <= now).length;
+  const disabled = values.filter((value) => value?.state === "disabled" || (value?.state !== "enabled" && value?.onExpiry === "require_review" && value.expiresAt && new Date(value.expiresAt) <= now)).length;
+  return { total: values.length, monitorOnly, disabled, expiredReview, notEnabled: monitorOnly + disabled };
+}
+
+export function publicRevisionStatus(protectedRevision, publicRevision) {
+  if (!publicRevision) return { label: "Public revision pending", confirmed: false };
+  return protectedRevision === publicRevision ? { label: "Public revision confirmed", confirmed: true } : { label: "Public revision pending", confirmed: false };
 }
 
 export function validateTransition(draft, now = new Date()) {

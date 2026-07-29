@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { AUDIT_ENDPOINT, CONTROL_ENDPOINT, IMPACT, auditRecordFields, auditUrl, canApplyTransition, classifyAuditFailure, classifyControlFailure, confirmationMatches, criticalConfirmationPhrase, expiryForPreset, parseAuditPage, requiresCriticalConfirmation, validateTransition } from "../admin/operational-control/core.js";
+import { AUDIT_ENDPOINT, CONTROL_ENDPOINT, IMPACT, auditRecordFields, auditUrl, canApplyTransition, classifyAuditFailure, classifyControlFailure, confirmationMatches, criticalConfirmationPhrase, expiryForPreset, parseAuditPage, publicRevisionStatus, requiresCriticalConfirmation, summarizeControls, validateTransition } from "../admin/operational-control/core.js";
 
 test("uses protected same-origin operational-control endpoint", () => assert.equal(CONTROL_ENDPOINT, "/admin/service/admin/operational-control"));
 test("previews provider inheritance and independent Orange Beach impact", () => { assert.match(IMPACT["providers.gulfShoresFlags"], /Fort Morgan/); assert.match(IMPACT["providers.orangeBeachFlags"], /Orange Beach locations only/); });
@@ -20,6 +20,14 @@ test("requires exact broad-disable phrases after trimming", () => {
   assert.equal(criticalConfirmationPhrase("global.liveData", "disabled"), "DISABLE LIVE DATA"); assert.equal(criticalConfirmationPhrase("domains.beachFlags", "disabled"), "DISABLE BEACH FLAGS"); assert.equal(confirmationMatches("DISABLE LIVE DATA", " DISABLE LIVE DATA \n"), true); assert.equal(confirmationMatches("DISABLE LIVE DATA", "DISABLE LIVE"), false); assert.equal(confirmationMatches("DISABLE BEACH FLAGS", "disable beach flags"), false);
 });
 test("keeps provider actions and restores on explicit button confirmation", () => { assert.equal(criticalConfirmationPhrase("providers.gulfShoresFlags", "disabled"), null); assert.equal(criticalConfirmationPhrase("global.liveData", "enabled"), null); assert.equal(confirmationMatches(null, ""), true); });
+test("summarizes active, monitor-only, disabled, and review-required controls", () => {
+  const now = new Date("2026-07-28T12:00:00Z");
+  assert.deepEqual(summarizeControls({ a: { state: "enabled" }, b: { state: "monitorOnly", expiresAt: "2026-07-28T13:00:00Z" }, c: { state: "disabled", expiresAt: "2026-07-28T13:00:00Z" }, d: { state: "monitorOnly", expiresAt: "2026-07-28T11:00:00Z", onExpiry: "require_review" } }, now), { total: 4, monitorOnly: 1, disabled: 2, expiredReview: 1, notEnabled: 3 });
+});
+test("compares protected and public revisions without claiming provider health", () => {
+  assert.deepEqual(publicRevisionStatus("rev-2", "rev-2"), { label: "Public revision confirmed", confirmed: true });
+  assert.equal(publicRevisionStatus("rev-2", "rev-1").confirmed, false);
+});
 test("requires valid reason, duration, revision, and phrase before apply", () => {
   const now = new Date("2026-07-21T20:00:00Z"); const draft = { controlId: "global.liveData", state: "disabled", reasonCode: "incident_response", operatorReason: "Confirmed bad live data", expiresAt: expiryForPreset("1h", now) }; const base = { draft, now, revision: "rev-1", requiredPhrase: "DISABLE LIVE DATA", confirmation: "DISABLE LIVE DATA" };
   assert.equal(canApplyTransition(base), true); assert.equal(canApplyTransition({ ...base, revision: null }), false); assert.equal(canApplyTransition({ ...base, confirmation: "DISABLE" }), false); assert.equal(canApplyTransition({ ...base, draft: { ...draft, operatorReason: "" } }), false); assert.equal(canApplyTransition({ ...base, draft: { ...draft, expiresAt: null } }), false);
@@ -35,4 +43,10 @@ test("opening or cancelling review cannot issue a mutation", () => {
   const source = readFileSync(new URL("../admin/operational-control/operational-control.js", import.meta.url), "utf8");
   assert.match(source, /returnValue = "";[\s\S]*?showModal\(\)/);
   assert.match(source, /if \(!confirmed\) return;[\s\S]*?method: "PATCH"/);
+});
+test("includes emergency response workflows and a production-mutation guard", () => {
+  const html = readFileSync(new URL("../admin/operational-control/index.html", import.meta.url), "utf8");
+  assert.match(html, /Emergency response/); assert.match(html, /With Codex/); assert.match(html, /Without Codex/);
+  assert.match(html, /Do not mutate production/); assert.match(html, /unavailable is safer/);
+  assert.match(html, /Provider Health/); assert.match(html, /Public v2 flags/);
 });
