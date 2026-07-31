@@ -1,0 +1,6 @@
+.publishing-note { margin: 14px 24px; padding: 12px 14px; border-left: 3px solid #12849a; background: rgba(18,132,154,.08); font-size: .9rem; }
+.banner-preview { display: grid; gap: 5px; }
+.source-debug { margin-top: 16px; }
+.source-debug pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto; }
+.validation-warning { color: #9a5d0b; font-weight: 650; }
+@media (max-width: 600px) { .publishing-note { margin-inline: 14px; } }

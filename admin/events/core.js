@@ -12,6 +12,9 @@ export function validateEventDraft(draft) {
   const start = new Date(draft.startAt), end = new Date(draft.endAt);
   if (Number.isNaN(start.valueOf()) || Number.isNaN(end.valueOf()) || end <= start) errors.dates = "End must follow start.";
   try { if (new URL(draft.sourceURL).protocol !== "https:") errors.sourceURL = "Use an official HTTPS URL."; } catch { errors.sourceURL = "Use an official HTTPS URL."; }
+  for (const key of ["officialEventURL","registrationURL","officialEventsPageURL","organizerWebsiteURL"]) if (draft[key]) { try { const url=new URL(draft[key]); if (url.protocol !== "https:" || /\.ics$|webcal|calendar-feed|\/common\/modules\/iCalendar\//i.test(url.pathname+url.hostname)) errors[key] = "Use a trusted public HTTPS webpage, not a calendar feed."; } catch { errors[key] = "Enter a valid URL."; } }
+  const publicURLs=[draft.officialEventURL,draft.registrationURL,draft.officialEventsPageURL,draft.organizerWebsiteURL].filter(Boolean);if(new Set(publicURLs).size!==publicURLs.length)errors.publicURLs="Public action URLs must be distinct.";
+  if (/<[a-z][\s\S]*>/i.test(`${draft.summary||""} ${draft.fullDescription||""}`)) errors.description = "Remove raw HTML from public copy.";
   return errors;
 }
 

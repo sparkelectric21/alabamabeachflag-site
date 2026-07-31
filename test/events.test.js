@@ -55,9 +55,9 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(js, /Assignment creates a pending-review event\. It never publishes directly\./);
   assert.match(js, /No active provider coverage/);
   assert.match(js, /reasonDetail/);
-  assert.match(js, /\["Source note",event\.sourceNote\]/);
-  assert.match(js, /\["Newsletter issue",event\.sourceNewsletterMonth\]/);
-  assert.match(js, /\["Contact or registration",event\.contactInformation\]/);
+  assert.match(js, /\["Public summary",event\.summary\]/);
+  assert.match(js, /\["Source calendar URL",event\.sourceCalendarURL\|\|event\.sourceURL\]/);
+  assert.match(js, /Original imported source/);
   assert.match(js, /event\.endTimeUnavailable/);
   assert.match(js, /updateBannerPreview/);
   assert.match(js, /control\.disabled=true/);
