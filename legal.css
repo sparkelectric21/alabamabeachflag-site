@@ -44,6 +44,10 @@ h1 { margin: 0; font-size: clamp(2.5rem, 7vw, 4rem); line-height: 1.05; letter-s
 .safety-card h2 { color: #78350f; }
 .safety-label { margin-bottom: 4px !important; color: #92400e; font-size: .78rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
 .contact-card { margin-inline: calc(clamp(28px, 5vw, 52px) * -0.35); padding: 26px !important; border: 0 !important; border-radius: 16px; background: #e0f2fe; }
+.guidance-steps { margin: 0; padding-left: 1.35rem; max-width: 72ch; }
+.guidance-steps li + li { margin-top: 16px; }
+.source-button { display: inline-block; padding: 12px 16px; border-radius: 10px; background: #0369a1; color: white; font-weight: 750; text-decoration: none; }
+.source-button:hover { background: #075985; }
 footer { padding: 0 20px 36px; color: #64748b; font-size: .9rem; text-align: center; }
 footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px; margin-bottom: 12px; }
 footer p { margin: 0; }

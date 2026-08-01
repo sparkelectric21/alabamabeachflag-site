@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="provider-health/provider-health.css">
   <link rel="stylesheet" href="responsive.css">
   <script type="module" src="navigation.js"></script>
-  <script type="module" src="admin.js?v=20260720-2"></script>
+  <script type="module" src="admin.js?v=20260801-1"></script>
 </head>
 <body>
   <header class="topbar">
@@ -28,7 +28,7 @@
       <section class="panel editor" aria-labelledby="editor-title">
         <div class="panel-heading"><div><p class="eyebrow">Compose</p><h2 id="editor-title">Announcement editor</h2></div><button id="reset" class="text-button" type="button">Reset</button></div>
         <form id="announcement-form" novalidate>
-          <label>Template<select id="template"><option value="custom">Custom</option><option value="provider-delay">Provider Delay</option><option value="data-unavailable">Data Temporarily Unavailable</option><option value="maintenance">Scheduled Maintenance</option><option value="update">New App Version Available</option><option value="general">General Information</option></select><small>Templates fill the form only; they never publish automatically.</small></label>
+          <label>Template<select id="template"><option value="custom">Custom</option><option value="jellyfish">Jellyfish Reported</option><option value="provider-delay">Provider Delay</option><option value="data-unavailable">Data Temporarily Unavailable</option><option value="maintenance">Scheduled Maintenance</option><option value="update">New App Version Available</option><option value="general">General Information</option></select><small>Templates fill the form only; they never publish automatically.</small></label>
           <label>Stable announcement ID<input id="id" name="id" maxlength="128" autocomplete="off" spellcheck="false" required><small>Keep this ID when revising the same event.</small><span class="field-error" data-error="id"></span></label>
           <div class="field-grid"><label>Title<input id="title" name="title" maxlength="80" required><span class="counter" data-counter="title">0 / 80</span><span class="field-error" data-error="title"></span></label><label>Severity<select id="severity" name="severity"><option value="information">Information</option><option value="notice">Notice</option><option value="important">Important</option><option value="critical">Critical</option></select><span class="field-error" data-error="severity"></span></label></div>
           <label>Message<textarea id="message" name="message" rows="5" maxlength="500" required></textarea><span class="counter" data-counter="message">0 / 500</span><span class="field-error" data-error="message"></span></label>

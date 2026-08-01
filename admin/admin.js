@@ -1,4 +1,4 @@
-import { API_BASE, TEMPLATES, expirationForPreset, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260720-2";
+import { API_BASE, TEMPLATES, centralInputToUtc, expirationForPreset, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260801-1";
 
 const $ = (selector) => document.querySelector(selector);
 const form = $("#announcement-form");
@@ -167,9 +167,17 @@ $("#clear-dialog").addEventListener("close", async () => {
 });
 
 $("#template").addEventListener("change", (event) => {
-  const template = TEMPLATES[event.target.value];
+  const template = event.target.value === "jellyfish" ? jellyfishTemplateDraft() : TEMPLATES[event.target.value];
   fields.title.value = template.title; fields.message.value = template.message; fields.severity.value = template.severity;
   fields.actionTitle.value = template.actionTitle || ""; fields.actionUrl.value = template.actionUrl || "";
+  if (event.target.value === "jellyfish") {
+    fields.id.value = template.id;
+    fields.startsAt.value = template.startsAt;
+    fields.expiresAt.value = template.expiresAt;
+    $("input[name='start-mode'][value='now']").checked = true;
+    $("#start-time-wrap").hidden = true;
+    document.querySelectorAll("#expiration-presets button").forEach((item) => item.classList.toggle("selected", item.dataset.preset === "midnight"));
+  }
   updatePreview(); updateCounters();
 });
 form.addEventListener("input", () => { updatePreview(); updateCounters(); });
@@ -179,7 +187,7 @@ $("#expiration-presets").addEventListener("click", (event) => {
   const button = event.target.closest("button"); if (!button) return;
   document.querySelectorAll("#expiration-presets button").forEach((item) => item.classList.toggle("selected", item === button));
   if (button.dataset.preset === "custom") { fields.expiresAt.focus(); return; }
-  const start = $("input[name='start-mode']:checked").value === "now" ? new Date() : new Date(fields.startsAt.value);
+  const start = $("input[name='start-mode']:checked").value === "now" ? new Date() : new Date(centralInputToUtc(fields.startsAt.value) || "invalid");
   const expires = expirationForPreset(button.dataset.preset, start);
   if (expires) fields.expiresAt.value = localInputValue(expires);
 });
