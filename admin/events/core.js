@@ -25,6 +25,42 @@ export function statusSummary(events) {
   }, {});
 }
 
+export function eventMatchesQueue(event, queue, now = new Date()) {
+  const flags = new Set(event.attentionFlags || []);
+  if (queue === "new") return event.status === "pendingReview" && !event.sourceChange && ![...flags].some(flag => flag !== "normalizationWarning");
+  if (queue === "changedAfterApproval") return flags.has("materialSourceChange") || flags.has("sourceRestored") || Boolean(event.sourceChange?.previousStatus && ["approved","scheduled","published"].includes(event.sourceChange.previousStatus));
+  if (queue === "ambiguousMatch") return flags.has("ambiguousMatch") || event.matchConfidence === "ambiguous";
+  if (queue === "possibleDuplicate") return flags.has("possibleDuplicate") || Boolean(event.possibleDuplicateOf);
+  if (queue === "normalizationWarning") return Boolean(event.normalizationWarnings?.length) || flags.has("normalizationWarning");
+  if (queue === "publishedAttention") return event.status === "published" && flags.size > 0;
+  if (queue === "removedOrCancelled") return event.status === "cancelled" || flags.has("sourceCancelled") || flags.has("sourceRemoved") || flags.has("sourceMissing");
+  if (queue === "manual") return event.sourceFacts?.providerId === "manual" || event.id?.startsWith("manual-");
+  if (queue === "expired") return event.status === "expired" || Date.parse(event.endAt) <= now.getTime();
+  return event.status === queue;
+}
+
+export function candidateMatchesQueue(candidate, queue) {
+  if (queue === "possibleDuplicate") return candidate.reason === "duplicate";
+  if (queue === "ambiguousMatch") return candidate.reason === "ambiguousLocation";
+  return queue === "excluded";
+}
+
+export function sourceChangeRows(event) {
+  const change = event.sourceChange;
+  if (!change) return [];
+  const fields = [...new Set([...(change.materialFields || []), ...(change.cosmeticFields || [])])];
+  return fields.map(field => ({ field, before: change.previous?.[field], after: change.current?.[field], material: (change.materialFields || []).includes(field) }));
+}
+
+export function matchSummary(event) {
+  if (event.matchConfidence === "ambiguous") return "Ambiguous source change — review required";
+  if (event.matchMethod === "adminOverride") return "Administrator assigned";
+  if (event.matchMethod === "exactVenue") return "Exact known venue";
+  if (event.matchMethod === "exactAddress") return "Exact beach-access address";
+  if (event.matchMethod === "sourceAlias") return "Known provider venue alias";
+  return event.matchExplanation || "Match method unavailable";
+}
+
 export function refreshEmptyState(refresh) {
   if (!refresh || refresh.status === "neverRun") return "Refresh has not run yet";
   if (refresh.status === "disabled") return "Beach event ingestion is disabled";
