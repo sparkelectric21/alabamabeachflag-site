@@ -38,13 +38,18 @@ export function selectScriptureForDate(date = new Date()) {
   return SCRIPTURES[index];
 }
 
+export function formatScriptureQuotation(text) {
+  const nestedText = text.replaceAll("“", "‘").replaceAll("”", "’");
+  return `“${nestedText}”`;
+}
+
 export function renderDailyScripture(date = new Date(), root = document.querySelector("[data-scripture-by-the-sea]")) {
   if (!root) return;
   const scripture = selectScriptureForDate(date);
   const text = root.querySelector("[data-scripture-text]");
   const link = root.querySelector("[data-scripture-link]");
   const translation = root.querySelector("[data-scripture-translation]");
-  text.textContent = scripture.text;
+  text.textContent = formatScriptureQuotation(scripture.text);
   link.textContent = scripture.reference;
   link.href = scripture.url;
   link.setAttribute("aria-label", `Read ${scripture.reference} on Bible.com (opens in a new tab)`);
