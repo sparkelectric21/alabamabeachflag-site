@@ -1,2 +1,5 @@
 /admin/*
   Cache-Control: no-store, max-age=0
+
+/scripture.js
+  Cache-Control: no-cache

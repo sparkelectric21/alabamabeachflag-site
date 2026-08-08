@@ -5,6 +5,7 @@ import { SCRIPTURES, formatScriptureQuotation, getChicagoDateKey, renderDailyScr
 
 const index = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const privacy = readFileSync(new URL("../privacy.html", import.meta.url), "utf8");
+const headers = readFileSync(new URL("../_headers", import.meta.url), "utf8");
 const intendedPassages = ["GEN.1.20", "PSA.95.5", "MRK.4.39", "JER.5.22", "PSA.113.3", "JOB.38.11", "GEN.1.10", "GEN.22.17", "MAT.13.1", "PSA.19.1", "JOB.38.12", "GEN.1.21", "ECC.1.5", "HAB.2.14", "MAT.4.19"];
 const verifiedTexts = [
   "Then God said, “Let the waters abound with an abundance of living creatures, and let birds fly above the earth across the face of the firmament of the heavens.”",
@@ -58,6 +59,11 @@ test("daily renderer applies the quotation presentation without changing stored 
   assert.equal(elements["[data-scripture-link]"].href, "https://www.bible.com/bible/114/MRK.4.39.NKJV");
   assert.equal(elements["[data-scripture-translation]"].textContent, "NKJV");
   assert.equal(SCRIPTURES[2].text, verifiedTexts[2]);
+});
+
+test("homepage loads a cache-busted, revalidated Scripture module", () => {
+  assert.match(index, /<script type="module" src="scripture\.js\?v=visible-quotes"><\/script>/);
+  assert.match(headers, /\/scripture\.js\s+Cache-Control: no-cache/);
 });
 
 test("daily rotation is deterministic, consecutive, and wraps", () => {
