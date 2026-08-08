@@ -4,6 +4,7 @@ import test from "node:test";
 import { SCRIPTURES, getChicagoDateKey, selectScriptureForDate } from "../scripture.js";
 
 const index = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const privacy = readFileSync(new URL("../privacy.html", import.meta.url), "utf8");
 const intendedPassages = ["GEN.1.20", "PSA.95.5", "MRK.4.39", "JER.5.22", "PSA.113.3", "JOB.38.11", "GEN.1.10", "GEN.22.17", "MAT.13.1", "PSA.19.1", "JOB.38.12", "GEN.1.21", "ECC.1.5", "HAB.2.14", "MAT.4.19"];
 
 test("curated collection contains exactly the 15 intended NKJV passages", () => {
@@ -41,11 +42,18 @@ test("America/Chicago controls the date across midnight and DST", () => {
   assert.equal(getChicagoDateKey(new Date("2026-11-01T05:00:00Z")), "2026-11-01");
 });
 
-test("homepage has the accessible progressive-enhancement fallback and copyright notice", () => {
+test("homepage keeps the accessible progressive-enhancement fallback and translation identifier", () => {
   assert.match(index, /<h2 id="scripture-heading">Scripture by the Sea<\/h2>/);
   assert.match(index, /data-scripture-text>The sea is His, for He made it; And His hands formed the dry land\./);
   assert.match(index, /href="https:\/\/www\.bible\.com\/bible\/114\/PSA\.95\.5\.NKJV" target="_blank" rel="noopener noreferrer" aria-label="Read Psalm 95:5 on Bible\.com \(opens in a new tab\)"/);
-  assert.match(index, /Scripture taken from the New King James Version®\. Copyright © 1982 by Thomas Nelson\. Used by permission\. All rights reserved\./);
+  assert.match(index, /data-scripture-translation>NKJV<\/span>/);
+});
+
+test("full NKJV acknowledgment appears on Privacy and not the homepage", () => {
+  const acknowledgment = /Scripture taken from the New King James Version®\. Copyright © 1982 by Thomas Nelson\. Used by permission\. All rights reserved\./;
+  assert.doesNotMatch(index, acknowledgment);
+  assert.match(privacy, /<section id="scripture-attribution"><h2>7\. Scripture attribution<\/h2>/);
+  assert.match(privacy, acknowledgment);
 });
 
 test("scripture feature remains limited to the public homepage", () => {
