@@ -2,7 +2,10 @@ const nav = document.querySelector(".admin-nav");
 const toggle = nav?.querySelector(".nav-toggle");
 const links = nav?.querySelector(".nav-links");
 
-if (links && !links.querySelector('a[href*="historical-data"]')) {
+const hasHistoricalDataLink = links && [...links.querySelectorAll("a")]
+  .some((link) => link.textContent.trim() === "Historical Data");
+
+if (links && !hasHistoricalDataLink) {
   const historical = document.createElement("a");
   historical.href = `${location.pathname.includes("/admin/") && !location.pathname.endsWith("/admin/") ? "../" : ""}historical-data/`;
   historical.textContent = "Historical Data";

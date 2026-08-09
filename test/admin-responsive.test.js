@@ -40,4 +40,5 @@ test("mobile navigation supports expanded state, Escape, and focus restoration",
   assert.match(source, /event\.key === "Escape"/);
   assert.match(source, /restoreFocus/);
   assert.match(source, /aria-current='page'/);
+  assert.match(source, /link\.textContent\.trim\(\) === "Historical Data"/);
 });
