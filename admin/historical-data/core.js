@@ -6,7 +6,10 @@ export const DATASET_NAMES = { beach_flag: "Beach flags", water_temperature: "Wa
 export function formatTime(value) {
   if (!value) return "Not available";
   const date = new Date(value); if (Number.isNaN(date.valueOf())) return "Not available";
-  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Chicago", timeZoneName: "short" }).format(date);
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    timeZone: "America/Chicago", timeZoneName: "short"
+  }).format(date);
 }
 export function formatCount(value) { return Number(value || 0).toLocaleString("en-US"); }
 export function healthLabel(status) { return ({ healthy: "Healthy", late: "Stale", never_succeeded: "Failing", not_scheduled: "Not configured" })[status] || "Unavailable"; }
