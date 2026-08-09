@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { candidateMatchesQueue, eventMatchesQueue, matchSummary, refreshEmptyState, sourceChangeRows, statusSummary, validateEventDraft } from "../admin/events/core.js";
+import { archiveMatchesFilters, candidateMatchesQueue, eventMatchesQueue, matchSummary, refreshEmptyState, sourceChangeRows, statusSummary, validateEventDraft } from "../admin/events/core.js";
 
 const valid = {
   title: "Beach Cleanup", beachId: "gulf-shores-public-beach", venue: "Gulf Place",
@@ -43,6 +43,18 @@ test("review helpers explain deterministic matches and readable source diffs", (
   ]);
 });
 
+test("archive search and date, beach, provider, and terminal filters compose", () => {
+  const event = { title: "Coastal Cleanup", venue: "Gulf Place", sourceName: "City", startAt: "2026-08-01T13:00:00Z", endAt: "2026-08-01T15:00:00Z", beachId: "gulf-shores", status: "completed", archivedAt: "2026-08-01T15:00:00Z", sourceFacts: { providerId: "city" } };
+  assert.equal(archiveMatchesFilters(event, { query: "cleanup", dateFrom: "2026-08-01", dateTo: "2026-08-01", beachId: "gulf-shores", providerId: "city", terminalStatus: "completed" }), true);
+  assert.equal(archiveMatchesFilters(event, { query: "concert" }), false);
+  assert.equal(archiveMatchesFilters(event, { dateFrom: "2026-08-02" }), false);
+  assert.equal(archiveMatchesFilters(event, { beachId: "orange-beach" }), false);
+  const legacy = { ...event, status: "expired", archivedAt: undefined };
+  assert.equal(eventMatchesQueue(legacy, "archive"), true);
+  assert.equal(archiveMatchesFilters(legacy, { query: "cleanup", terminalStatus: "expired" }), true);
+  assert.equal(archiveMatchesFilters(legacy, { terminalStatus: "completed" }), false);
+});
+
 test("refresh status card explains every important empty state", () => {
   assert.equal(refreshEmptyState(null), "Refresh has not run yet");
   assert.equal(refreshEmptyState({ status: "disabled" }), "Beach event ingestion is disabled");
@@ -70,6 +82,8 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(html, /Published events needing attention/);
   assert.match(html, /Removed or cancelled/);
   assert.match(html, /Manual events/);
+  assert.match(html, /Archive filters/);
+  assert.match(html, /archive-from/);
   assert.match(html, /assignment-dialog/);
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /option value="approved">Approved, not public/);
@@ -91,6 +105,8 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(js, /Original imported description/);
   assert.match(js, /sourceChangeSection/);
   assert.match(js, /auditSection/);
+  assert.match(js, /Read-only archived record/);
+  assert.match(js, /archiveMatchesFilters/);
   assert.match(js, /publishOption\.disabled/);
   assert.match(js, /status\.disabled=!event/);
   assert.match(js, /status\.value=event\?\.status\|\|"pendingReview"/);

@@ -35,8 +35,21 @@ export function eventMatchesQueue(event, queue, now = new Date()) {
   if (queue === "publishedAttention") return event.status === "published" && flags.size > 0;
   if (queue === "removedOrCancelled") return event.status === "cancelled" || flags.has("sourceCancelled") || flags.has("sourceRemoved") || flags.has("sourceMissing");
   if (queue === "manual") return event.sourceFacts?.providerId === "manual" || event.id?.startsWith("manual-");
-  if (queue === "expired") return event.status === "expired" || Date.parse(event.endAt) <= now.getTime();
+  if (queue === "archive") return event.status === "completed" || event.status === "expired" || Boolean(event.archivedAt);
+  if (queue === "expired") return event.status === "expired";
   return event.status === queue;
+}
+
+export function archiveMatchesFilters(event, { query = "", dateFrom = "", dateTo = "", beachId = "", providerId = "", terminalStatus = "" } = {}) {
+  if (event.status !== "completed" && event.status !== "expired" && !event.archivedAt) return false;
+  const text = `${event.title || ""} ${event.venue || ""} ${event.address || ""} ${event.sourceName || ""} ${event.sourceFacts?.providerId || ""}`.toLowerCase();
+  if (query.trim() && !text.includes(query.trim().toLowerCase())) return false;
+  if (dateFrom && Date.parse(event.endAt) < Date.parse(`${dateFrom}T00:00:00`)) return false;
+  if (dateTo && Date.parse(event.startAt) >= Date.parse(`${dateTo}T00:00:00`) + 86400000) return false;
+  if (beachId && event.beachId !== beachId) return false;
+  if (providerId && event.sourceFacts?.providerId !== providerId) return false;
+  if (terminalStatus && event.status !== terminalStatus) return false;
+  return true;
 }
 
 export function candidateMatchesQueue(candidate, queue) {
