@@ -12,7 +12,8 @@ The static page sends credentialed browser requests to the existing Worker. Clou
 4. Optionally add both an action title and an approved `https://alabamabeachflag.com` URL.
 5. Review the local start and expiration in the confirmation dialog, then publish. Critical notices require an explicit confirmation and are not dismissible in the app preview.
 6. Use **Edit or replace** to copy the active item into the editor. Refresh never overwrites an unsaved draft.
-7. Use **Clear announcement** and confirm to delete the current record.
+7. Under **Applies to**, keep the default **All Beaches** or clear it and select one or more supported beaches. Confirm the audience in the review dialog and published-status panel.
+8. Use **Clear announcement** and confirm to delete the current record.
 
 Public caches use up to a three-minute shared TTL and Workers KV may take roughly another minute to propagate. Wait several minutes before treating a public check as final.
 

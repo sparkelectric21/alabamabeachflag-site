@@ -1,5 +1,11 @@
 export const API_BASE = "/admin/service";
 export const SEVERITIES = ["information", "notice", "important", "critical"];
+export const BEACHES = Object.freeze([
+  { id: "gulf-shores", name: "Gulf Shores" },
+  { id: "orange-beach", name: "Orange Beach" },
+  { id: "fort-morgan", name: "Fort Morgan" },
+  { id: "dauphin-island", name: "Dauphin Island" }
+]);
 export const ANNOUNCEMENT_TIME_ZONE = "America/Chicago";
 export const ACTION_URL_POLICY_MESSAGE = "Use an approved HTTPS link on alabamabeachflag.com or the American Red Cross, without credentials, a port, or a fragment.";
 export const ANNOUNCEMENT_ACTION_RULES = Object.freeze({
@@ -96,6 +102,12 @@ export function validateDraft(draft, now = new Date()) {
   if (!plain(draft.title, 80)) errors.title = "Enter 1–80 plain-text characters.";
   if (!plain(draft.message, 500)) errors.message = "Enter 1–500 plain-text characters.";
   if (!SEVERITIES.includes(draft.severity)) errors.severity = "Choose a supported severity.";
+  if (draft.scope !== "all" && draft.scope !== "beaches") errors.scope = "Choose who this announcement applies to.";
+  const beachIds = Array.isArray(draft.beachIds) ? draft.beachIds : [];
+  const supportedIds = new Set(BEACHES.map(({ id }) => id));
+  if (beachIds.some((id) => !supportedIds.has(id)) || new Set(beachIds).size !== beachIds.length) errors.scope = "Choose only supported beaches.";
+  if (draft.scope === "all" && beachIds.length) errors.scope = "All Beaches cannot be combined with individual beaches.";
+  if (draft.scope === "beaches" && !beachIds.length) errors.scope = "Choose at least one beach.";
   const startsUtc = centralInputToUtc(draft.startsAt);
   const expiresUtc = centralInputToUtc(draft.expiresAt);
   const starts = new Date(startsUtc || "invalid");
@@ -120,8 +132,15 @@ export function payloadFromDraft(draft) {
   return {
     id: draft.id.trim(), title: draft.title.trim(), message: draft.message.trim(), severity: draft.severity,
     startsAt: toUtc(draft.startsAt), expiresAt: toUtc(draft.expiresAt),
-    actionTitle: draft.actionTitle.trim() || null, actionUrl: draft.actionUrl.trim() || null
+    actionTitle: draft.actionTitle.trim() || null, actionUrl: draft.actionUrl.trim() || null,
+    scope: draft.scope, beachIds: draft.scope === "beaches" ? [...draft.beachIds] : []
   };
+}
+
+export function announcementScopeLabel(announcement) {
+  if (announcement?.scope !== "beaches" || !Array.isArray(announcement.beachIds) || !announcement.beachIds.length) return "All Beaches";
+  const names = new Map(BEACHES.map(({ id, name }) => [id, name]));
+  return announcement.beachIds.map((id) => names.get(id) || id).join(", ");
 }
 
 export function classifyFailure({ status = 0, redirected = false, contentType = "", network = false }) {

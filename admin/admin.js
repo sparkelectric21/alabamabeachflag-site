@@ -1,4 +1,4 @@
-import { API_BASE, TEMPLATES, centralInputToUtc, expirationForPreset, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260801-1";
+import { API_BASE, TEMPLATES, announcementScopeLabel, centralInputToUtc, expirationForPreset, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260810-1";
 
 const $ = (selector) => document.querySelector(selector);
 const form = $("#announcement-form");
@@ -9,6 +9,13 @@ const fields = {
 let currentAnnouncement = null;
 let pendingPayload = null;
 let busy = false;
+const allBeaches = $("#scope-all");
+const beachInputs = [...document.querySelectorAll("input[name='beach-id']")];
+
+function setAudience(scope = "all", beachIds = []) {
+  allBeaches.checked = scope !== "beaches";
+  beachInputs.forEach((input) => { input.checked = scope === "beaches" && beachIds.includes(input.value); input.disabled = allBeaches.checked; });
+}
 
 function freshDefaults() {
   const now = new Date();
@@ -17,6 +24,7 @@ function freshDefaults() {
   fields.startsAt.value = localInputValue(now);
   fields.expiresAt.value = localInputValue(new Date(now.getTime() + 60 * 60000));
   fields.actionTitle.value = ""; fields.actionUrl.value = "";
+  setAudience();
   $("input[name='start-mode'][value='now']").checked = true;
   $("#start-time-wrap").hidden = true;
   $("#template").value = "custom";
@@ -27,7 +35,8 @@ function draft() {
   return {
     id: fields.id.value, title: fields.title.value, message: fields.message.value, severity: fields.severity.value,
     startsAt: $("input[name='start-mode']:checked").value === "now" ? localInputValue(new Date()) : fields.startsAt.value,
-    expiresAt: fields.expiresAt.value, actionTitle: fields.actionTitle.value, actionUrl: fields.actionUrl.value
+    expiresAt: fields.expiresAt.value, actionTitle: fields.actionTitle.value, actionUrl: fields.actionUrl.value,
+    scope: allBeaches.checked ? "all" : "beaches", beachIds: beachInputs.filter(({ checked }) => checked).map(({ value }) => value)
   };
 }
 
@@ -91,6 +100,7 @@ function renderStatus(announcement) {
   badge.textContent = "Active"; badge.className = "badge active";
   const list = document.createElement("dl"); list.className = "status-list";
   appendDetail(list, "Severity", announcement.severity);
+  appendDetail(list, "Applies to", announcementScopeLabel(announcement));
   appendDetail(list, "Title", announcement.title);
   appendDetail(list, "Message", announcement.message, "status-message");
   appendDetail(list, "Starts", formatDate(announcement.startsAt));
@@ -150,10 +160,11 @@ form.addEventListener("submit", (event) => {
   $("#confirm-title").textContent = currentAnnouncement ? "Replace the current announcement?" : "Publish this announcement?";
   const summary = $("#confirm-summary"); summary.replaceChildren();
   const title = document.createElement("p"); title.textContent = `${pendingPayload.severity.toUpperCase()} · ${pendingPayload.title}`;
+  const audience = document.createElement("p"); audience.textContent = `Applies to: ${announcementScopeLabel(pendingPayload)}`;
   const times = document.createElement("div"); times.className = "confirm-times";
   const start = document.createElement("p"); start.textContent = `Starts: ${formatDate(pendingPayload.startsAt)}`;
   const end = document.createElement("p"); end.textContent = `Expires: ${formatDate(pendingPayload.expiresAt)}`;
-  times.append(start, end); summary.append(title, times);
+  times.append(start, end); summary.append(title, audience, times);
   $("#critical-warning").hidden = pendingPayload.severity !== "critical";
   $("#confirm-dialog").showModal();
 });
@@ -182,6 +193,14 @@ $("#template").addEventListener("change", (event) => {
 });
 form.addEventListener("input", () => { updatePreview(); updateCounters(); });
 form.addEventListener("change", updatePreview);
+allBeaches.addEventListener("change", () => {
+  if (allBeaches.checked) setAudience("all");
+  else beachInputs.forEach((input) => { input.disabled = false; });
+});
+beachInputs.forEach((input) => input.addEventListener("change", () => {
+  if (input.checked) allBeaches.checked = false;
+  if (!beachInputs.some(({ checked }) => checked)) setAudience("all");
+}));
 document.querySelectorAll("input[name='start-mode']").forEach((radio) => radio.addEventListener("change", () => { $("#start-time-wrap").hidden = radio.value !== "later" || !radio.checked; if (radio.checked && radio.value === "later") fields.startsAt.value = localInputValue(new Date(Date.now() + 15 * 60000)); }));
 $("#expiration-presets").addEventListener("click", (event) => {
   const button = event.target.closest("button"); if (!button) return;
@@ -195,6 +214,7 @@ $("#edit-current").addEventListener("click", () => {
   if (!currentAnnouncement) return;
   for (const key of ["id", "title", "message", "severity", "actionTitle", "actionUrl"]) fields[key].value = currentAnnouncement[key] || "";
   fields.startsAt.value = localInputValue(new Date(currentAnnouncement.startsAt)); fields.expiresAt.value = localInputValue(new Date(currentAnnouncement.expiresAt));
+  setAudience(currentAnnouncement.scope, currentAnnouncement.beachIds);
   $("input[name='start-mode'][value='later']").checked = true; $("#start-time-wrap").hidden = false;
   updatePreview(); updateCounters(); $("#editor-title").scrollIntoView({ behavior: "smooth" });
 });

@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ACTION_URL_POLICY_MESSAGE, TEMPLATES, centralDateId, centralInputToUtc, classifyFailure, expirationForPreset, isApprovedAnnouncementActionUrl, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft } from "../admin/core.js";
+import { ACTION_URL_POLICY_MESSAGE, TEMPLATES, announcementScopeLabel, centralDateId, centralInputToUtc, classifyFailure, expirationForPreset, isApprovedAnnouncementActionUrl, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft } from "../admin/core.js";
 
-const base = { id: "notice-1", title: "Service notice", message: "Updates may be delayed.", severity: "information", startsAt: "2026-07-20T12:00", expiresAt: "2026-07-20T13:00", actionTitle: "", actionUrl: "" };
+const base = { id: "notice-1", title: "Service notice", message: "Updates may be delayed.", severity: "information", startsAt: "2026-07-20T12:00", expiresAt: "2026-07-20T13:00", actionTitle: "", actionUrl: "", scope: "all", beachIds: [] };
 const now = new Date("2026-07-20T12:30:00Z");
 
 test("validates a complete draft and converts local dates to canonical UTC", () => {
@@ -10,6 +10,16 @@ test("validates a complete draft and converts local dates to canonical UTC", () 
   const payload = payloadFromDraft(base);
   assert.match(payload.startsAt, /^2026-07-20T\d{2}:00:00\.000Z$/);
   assert.equal(payload.actionTitle, null); assert.equal(payload.actionUrl, null);
+  assert.equal(payload.scope, "all"); assert.deepEqual(payload.beachIds, []);
+});
+test("validates and labels announcement beach targeting", () => {
+  const targeted = { ...base, scope: "beaches", beachIds: ["gulf-shores", "fort-morgan"] };
+  assert.deepEqual(validateDraft(targeted, new Date("2026-07-20T11:00:00Z")), {});
+  assert.deepEqual(payloadFromDraft(targeted).beachIds, ["gulf-shores", "fort-morgan"]);
+  assert.equal(announcementScopeLabel(targeted), "Gulf Shores, Fort Morgan");
+  assert.equal(announcementScopeLabel({}), "All Beaches");
+  assert.ok(validateDraft({ ...targeted, beachIds: ["unknown"] }).scope);
+  assert.ok(validateDraft({ ...targeted, beachIds: [] }).scope);
 });
 test("rejects missing content and unsupported severity", () => {
   const errors = validateDraft({ ...base, id: "bad id", title: "", message: "<b>unsafe</b>", severity: "warning" }, new Date("2026-07-20T11:00:00Z"));
