@@ -2,7 +2,7 @@ export const HEALTH_ENDPOINT = "/admin/service/admin/provider-health";
 export const CATALOG_ENDPOINT = "/admin/service/admin/provider-catalog";
 export const NOTIFICATIONS_ENDPOINT = "/admin/service/admin/provider-health/notifications";
 export const CATALOG_ROLES = ["Primary", "Secondary", "Standby", "Automatic Fallback", "Monitoring Only", "Internal Protection", "Disabled"];
-export function formatDate(value, fallback = "Not available") { if (!value) return fallback; const date = new Date(value); return Number.isNaN(date.valueOf()) ? fallback : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date); }
+export { formatCentralTime as formatDate } from "../shared.js";
 export function statusLabel(value) { return ({ healthy: "Healthy", degraded: "Degraded", critical: "Critical", incident: "Incident" })[value] || "Unknown"; }
 export function incidentScope(item) { if (item.incidentKind === "shared_provider") return "Shared provider incident"; if (item.incidentKind === "quality_gate") return "Publication quality gate"; if (item.incidentKind === "isolated") return "Isolated station failure"; return item.affectedBeachCount > 1 ? "Multiple beaches affected" : "Isolated station failure"; }
 export function roleWarning(role) { if (role === "Automatic Fallback") return "This provider is labeled as an automatic fallback only. Actual failover must be implemented separately."; if (role === "Disabled") return "This label does not disable provider requests."; return ""; }

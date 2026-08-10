@@ -4,9 +4,11 @@ import { readFileSync } from "node:fs";
 
 const pages = [
   "admin/index.html",
+  "admin/events/index.html",
   "admin/provider-health/index.html",
   "admin/verification/index.html",
-  "admin/operational-control/index.html"
+  "admin/operational-control/index.html",
+  "admin/historical-data/index.html"
 ];
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -19,7 +21,7 @@ for (const path of pages) {
     assert.match(html, /class="nav-toggle"[^>]*aria-expanded="false"[^>]*aria-controls="admin-sections"/);
     assert.match(html, /class="nav-links" id="admin-sections"/);
     assert.equal((html.match(/aria-current="page"/g) || []).length, 1);
-    for (const destination of ["Announcements", "Provider health", "Verification", "Controls"]) {
+    for (const destination of ["Announcements", "Provider Health", "Verification", "Operational Control", "Historical Data"]) {
       assert.match(html, new RegExp(`>${destination}<`));
     }
   });
@@ -40,5 +42,5 @@ test("mobile navigation supports expanded state, Escape, and focus restoration",
   assert.match(source, /event\.key === "Escape"/);
   assert.match(source, /restoreFocus/);
   assert.match(source, /aria-current='page'/);
-  assert.match(source, /link\.textContent\.trim\(\) === "Historical Data"/);
+  assert.doesNotMatch(source, /Historical Data/);
 });

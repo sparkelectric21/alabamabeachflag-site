@@ -1,4 +1,5 @@
 import { CONTROL_ENDPOINT, IMPACT, PUBLIC_CONFIGURATION_ENDPOINT, ambiguousMutationOutcome, auditRecordFields, auditUrl, canApplyTransition, classifyAuditFailure, classifyControlFailure, criticalConfirmationPhrase, expiryForPreset, parseAuditPage, publicRevisionStatus, summarizeControls, validateTransition } from "./core.js";
+import { formatCentralTime } from "../shared.js";
 
 const $ = (selector) => document.querySelector(selector);
 const label = (value) => String(value).replaceAll(".", " › ").replaceAll(/([A-Z])/g, " $1");
@@ -35,8 +36,8 @@ function render(payload) {
     title.className = "control-title"; glyph.className = "control-glyph"; glyph.setAttribute("aria-hidden", "true"); glyph.textContent = detail.glyph; name.textContent = detail.name;
     description.className = "control-description"; description.textContent = detail.description; rawId.className = "control-id"; rawId.textContent = id; title.append(glyph, name); identity.append(title, description, rawId);
     const state = document.createElement("div"), badge = document.createElement("span"); state.className = "control-state"; badge.className = `state-badge state-${stateClass(value.state)}`; badge.textContent = stateLabel(value.state); state.append(badge);
-    if (value.expiresAt) { const expired = new Date(value.expiresAt) <= new Date(); const expiry = document.createElement("span"); expiry.className = "state-expiry"; expiry.textContent = expired && value.onExpiry === "require_review" ? `Expired · review required since ${new Date(value.expiresAt).toLocaleString()}` : `Expires ${new Date(value.expiresAt).toLocaleString()}`; state.append(expiry); }
-    if (value.operatorReason || value.incidentId || value.activatedAt) { const details = document.createElement("details"), summaryNode = document.createElement("summary"), list = document.createElement("dl"); details.className = "control-meta"; summaryNode.textContent = "Operational details"; list.className = "status-list"; [["Reason", value.operatorReason], ["Incident", value.incidentId], ["Last changed", value.activatedAt ? new Date(value.activatedAt).toLocaleString() : null]].filter(([, item]) => item).forEach(([term, item]) => { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = term; dd.textContent = item; list.append(dt, dd); }); details.append(summaryNode, list); identity.append(details); }
+    if (value.expiresAt) { const expired = new Date(value.expiresAt) <= new Date(); const expiry = document.createElement("span"); expiry.className = "state-expiry"; expiry.textContent = expired && value.onExpiry === "require_review" ? `Expired · review required since ${formatCentralTime(value.expiresAt)}` : `Expires ${formatCentralTime(value.expiresAt)}`; state.append(expiry); }
+    if (value.operatorReason || value.incidentId || value.activatedAt) { const details = document.createElement("details"), summaryNode = document.createElement("summary"), list = document.createElement("dl"); details.className = "control-meta"; summaryNode.textContent = "Operational details"; list.className = "status-list"; [["Reason", value.operatorReason], ["Incident", value.incidentId], ["Last changed", value.activatedAt ? formatCentralTime(value.activatedAt) : null]].filter(([, item]) => item).forEach(([term, item]) => { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = term; dd.textContent = item; list.append(dt, dd); }); details.append(summaryNode, list); identity.append(details); }
     row.append(identity, state); controls.append(row);
   }
   const normal = summary.notEnabled === 0;
@@ -55,7 +56,7 @@ function renderAuditRecord(record) {
   const actionBadge = document.createElement("span"); actionBadge.className = `state-badge audit-action state-${stateClass(record.nextState)}`; actionBadge.textContent = action;
   for (const [name, rawValue] of displayFields) {
     const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = name;
-    if (name === "Changed" && !Number.isNaN(Date.parse(rawValue))) { const time = document.createElement("time"); time.dateTime = rawValue; time.textContent = new Date(rawValue).toLocaleString(); dd.append(time); }
+    if (name === "Changed" && !Number.isNaN(Date.parse(rawValue))) { const time = document.createElement("time"); time.dateTime = rawValue; time.textContent = formatCentralTime(rawValue); dd.append(time); }
     else dd.textContent = typeof rawValue === "boolean" ? (rawValue ? "Yes" : "No") : String(rawValue);
     fields.append(dt, dd);
   }
@@ -89,7 +90,7 @@ async function loadAudit({ append = false } = {}) {
     page.records.forEach((record, index) => { const id = auditIdentity(record, index); if (!auditIds.has(id)) { auditIds.add(id); records.append(renderAuditRecord(record)); } });
     auditCursor = page.cursor; records.hidden = auditIds.size === 0; $("#summary-audit").textContent = String(auditIds.size);
     const latest = page.records.find((record) => record.timestamp && !Number.isNaN(Date.parse(record.timestamp)));
-    if (!append) $("#summary-last-change").textContent = latest ? new Date(latest.timestamp).toLocaleString() : "None recorded";
+    if (!append) $("#summary-last-change").textContent = latest ? formatCentralTime(latest.timestamp) : "None recorded";
     if (auditIds.size === 0) setAuditStatus("No operational-control changes have been recorded."); else $("#audit-status").hidden = true;
     $("#load-more-audit").hidden = !auditCursor;
   } catch (error) { setAuditStatus(error instanceof Error ? error.message : "Audit history could not be loaded.", true); $("#load-more-audit").hidden = true; }

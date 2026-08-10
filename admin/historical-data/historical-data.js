@@ -1,9 +1,10 @@
 import { AREA_NAMES, DATASET_NAMES, SUMMARY_ENDPOINT, chartPoints, failureMessage, formatCount, formatTime, healthLabel, normalizeObservationFilters, observationQuery, timestampLabel } from "./core.js";
+import { requestJson } from "../shared.js";
 const byId = id => document.getElementById(id); let controller; let cursors = [null]; let page = 0; let nextCursor = null; let observationsLoading = false;
 const escape = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[character]);
 const metric = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
 const number = value => formatCount(value);
-const requestJson = async (url, signal) => { const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" }, signal }); const type = response.headers.get("content-type") || ""; if (!response.ok || !type.includes("json")) { let body = {}; try { body = await response.json(); } catch {} throw new Error(failureMessage({ status: response.status, redirected: response.redirected, contentType: type, notConfigured: body.status === "not_configured" })); } return response.json(); };
+const request = async (url, signal) => { try { return await requestJson(url, { signal }); } catch (error) { if (error.name === "AbortError") throw error; throw new Error(failureMessage({ status: error.status, redirected: error.kind === "access", contentType: error.response?.headers?.get("content-type") || "", notConfigured: error.payload?.status === "not_configured" })); } };
 function formValues() { return normalizeObservationFilters(Object.fromEntries(new FormData(byId("filters")).entries())); }
 
 function renderSummary(data) {
@@ -23,7 +24,7 @@ async function loadObservations(intent = { type: "stay", cursor: cursors[page] }
   let filters; try { filters = formValues(); } catch (error) { byId("error").textContent = error.message; byId("error").hidden = false; return false; }
   observationsLoading = true; controller = new AbortController(); byId("observations-loading").hidden = false; byId("next").disabled = true; byId("previous").disabled = true;
   try {
-    const data = await requestJson(observationQuery(filters, intent.cursor), controller.signal);
+    const data = await request(observationQuery(filters, intent.cursor), controller.signal);
     if (intent.type === "next") { cursors = [...cursors.slice(0, page + 1), intent.cursor]; page++; }
     else if (intent.type === "previous") page--;
     else if (intent.type === "reset") { cursors = [null]; page = 0; }
@@ -32,6 +33,6 @@ async function loadObservations(intent = { type: "stay", cursor: cursors[page] }
   } catch(error) { if(error.name!=="AbortError") { byId("error").textContent=error.message; byId("error").hidden=false; } return false; }
   finally { observationsLoading=false; byId("observations-loading").hidden=true; byId("next").disabled=!nextCursor; byId("previous").disabled=page===0; }
 }
-async function load() { byId("error").hidden=true; try { const data=await requestJson(SUMMARY_ENDPOINT); renderSummary(data); byId("loading").hidden=true; byId("dashboard").hidden=false; await loadObservations(); } catch(error) { byId("loading").hidden=true; byId("error").textContent=error.message; byId("error").hidden=false; } }
+async function load() { byId("error").hidden=true; try { const data=await request(SUMMARY_ENDPOINT); renderSummary(data); byId("loading").hidden=true; byId("dashboard").hidden=false; await loadObservations(); } catch(error) { byId("loading").hidden=true; byId("error").textContent=error.message; byId("error").hidden=false; } }
 for(const [value,label] of Object.entries(DATASET_NAMES)) byId("filters").elements.type.add(new Option(label,value)); for(const [value,label] of Object.entries(AREA_NAMES)) byId("filters").elements.area.add(new Option(label,value));
 byId("filters").addEventListener("submit",e=>{e.preventDefault();loadObservations({type:"reset",cursor:null})}); byId("clear").addEventListener("click",()=>setTimeout(()=>loadObservations({type:"reset",cursor:null}))); byId("next").addEventListener("click",()=>loadObservations({type:"next",cursor:nextCursor})); byId("previous").addEventListener("click",()=>loadObservations({type:"previous",cursor:cursors[page-1]})); byId("observations").addEventListener("click",e=>{const b=e.target.closest(".details-toggle");if(!b)return;const row=byId(b.getAttribute("aria-controls"));const open=b.getAttribute("aria-expanded")==="true";b.setAttribute("aria-expanded",String(!open));b.textContent=open?"Show":"Hide";row.hidden=open;}); byId("refresh").addEventListener("click",load); load();

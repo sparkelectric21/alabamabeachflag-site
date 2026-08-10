@@ -1,3 +1,4 @@
+import { centralInputValue as sharedCentralInputValue, centralWallTimeToIso } from "./shared.js";
 export const API_BASE = "/admin/service";
 export const SEVERITIES = ["information", "notice", "important", "critical"];
 export const BEACHES = Object.freeze([
@@ -33,34 +34,16 @@ export const TEMPLATES = {
   custom: { title: "", message: "", severity: "information" }
 };
 
-function centralParts(date) {
-  return Object.fromEntries(new Intl.DateTimeFormat("en-US", {
-    timeZone: ANNOUNCEMENT_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
-  }).formatToParts(date).filter(({ type }) => type !== "literal").map(({ type, value }) => [type, value]));
-}
-
 export function centralDateId(date = new Date()) {
-  const parts = centralParts(date);
-  return `${parts.year}-${parts.month}-${parts.day}`;
+  return sharedCentralInputValue(date).slice(0, 10);
 }
 
 export function centralInputValue(date) {
-  const parts = centralParts(date);
-  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  return sharedCentralInputValue(date);
 }
 
 export function centralInputToUtc(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value || "");
-  if (!match) return null;
-  const requested = Date.UTC(+match[1], +match[2] - 1, +match[3], +match[4], +match[5]);
-  let result = requested;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const parts = centralParts(new Date(result));
-    const represented = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
-    result += requested - represented;
-  }
-  return centralInputValue(new Date(result)) === value ? new Date(result).toISOString() : null;
+  try { return centralWallTimeToIso(value); } catch { return null; }
 }
 
 export function isApprovedAnnouncementActionUrl(value) {

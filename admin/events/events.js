@@ -1,15 +1,16 @@
 import { EVENT_TYPES as TYPES, IMPACT_LEVELS as IMPACTS, archiveMatchesFilters, candidateMatchesQueue, eventMatchesQueue, matchSummary, refreshEmptyState, sourceChangeRows, statusSummary, validateEventDraft } from "./core.js";
+import { centralInputValue, formatCentralTime, requestJson, setNotice } from "../shared.js";
 const API = "/admin/service";
 const $ = (selector) => document.querySelector(selector);
 const labels = {completed:"Completed · archived",pendingReview:"Pending Review",approved:"Approved · not public",scheduled:"Scheduled · not public; publish manually",published:"Published",raceOrSport:"Race or sport",beachCleanup:"Beach cleanup",fireworksOrHoliday:"Fireworks or holiday",accessOrParkingImpact:"Access or parking impact",materialSourceChange:"Changed after approval",sourceCancelled:"Cancelled at source",sourcePostponed:"Postponed at source",sourceMissing:"Missing from latest source refresh",sourceRemoved:"Removed from source",sourceRestored:"Restored at source",ambiguousMatch:"Ambiguous beach match",possibleDuplicate:"Possible duplicate",normalizationWarning:"Normalization warning"};
 let model = {events:[],archive:[],rules:[],providers:[],beaches:[],beachReferences:[],audit:[],exclusions:[],coverage:[],refresh:null,notifications:null};
 let refreshLoadError = "";
 const eventMutations = new Set();
-const escDate = value => new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short"}).format(new Date(value));
-const localValue = value => value ? new Date(new Date(value).getTime()-new Date(value).getTimezoneOffset()*60000).toISOString().slice(0,16) : "";
+const escDate = value => formatCentralTime(value);
+const localValue = value => centralInputValue(value);
 
-function notify(message,error=false){const box=$("#alert");box.textContent=message;box.hidden=false;box.classList.toggle("error",error)}
-async function request(path,options={}){const response=await fetch(`${API}${path}`,{credentials:"include",headers:{Accept:"application/json",...(options.body?{"Content-Type":"application/json"}:{}),...(options.headers||{})},...options});if(!response.ok){const payload=await response.json().catch(()=>null),fields=payload?.fields?.length?` Check: ${payload.fields.join(", ")}.`:"",error=new Error(response.status===412?"This event changed since it was loaded. The current event has been refreshed; review it before retrying.":`${payload?.error||`Request failed (${response.status})`}${fields}`);error.status=response.status;throw error}return response.json()}
+function notify(message,error=false){setNotice($("#alert"),message,{kind:error?"error":"status"})}
+async function request(path,options={}){try{return await requestJson(`${API}${path}`,options)}catch(error){const fields=error.payload?.fields?.length?` Check: ${error.payload.fields.join(", ")}.`:"";if(error.status===412)error.message="This event changed since it was loaded. The current event has been refreshed; review it before retrying.";else if(error.kind==="http")error.message=`${error.payload?.error||error.message}${fields}`;throw error}}
 function text(tag,value,className){const node=document.createElement(tag);node.textContent=value;if(className)node.className=className;return node}
 function statusCounts(){return statusSummary(model.events)}
 function renderStats(){const counts=statusCounts(),refresh=model.refresh?.counts||{},queue=model.notifications?.queue||{},activeBeaches=model.coverage.filter(item=>item.activeEvents>0).length;$("#stats").replaceChildren(...[["Action required",queue.pendingCount??counts.pendingReview??0],["New this refresh",refresh.newEvents||0],["Changed",refresh.changed||0],["Published",counts.published||0],["Possible duplicates",queue.possibleDuplicateCount||0],["Provider failures",queue.providerFailureCount||0],["Source missing",refresh.missingFromSource||0],["Active beaches",activeBeaches]].map(([label,value])=>{const node=text("div","", "stat");node.append(text("strong",String(value)),text("span",label));return node}))}

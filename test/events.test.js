@@ -141,6 +141,6 @@ test("event writes use per-record locks and conditional revisions", async () => 
   assert.match(source, /eventMutations\.add\(event\.id\)/);
   assert.match(source, /eventMutations\.delete\(event\.id\)/);
   assert.match(source, /"If-Match":event\.revision/);
-  assert.match(source, /response\.status===412/);
+  assert.match(source, /error\.status===412/);
   assert.match(source, /current event has been refreshed; review it before retrying/);
 });
