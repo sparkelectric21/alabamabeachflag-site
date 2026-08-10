@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ACTION_URL_POLICY_MESSAGE, TEMPLATES, announcementScopeLabel, centralDateId, centralInputToUtc, classifyFailure, expirationForPreset, isApprovedAnnouncementActionUrl, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft } from "../admin/core.js";
+import { readFileSync } from "node:fs";
+import { ACTION_URL_POLICY_MESSAGE, TEMPLATES, announcementScopeLabel, audienceAfterAllBeachesChange, audienceAfterBeachChange, centralDateId, centralInputToUtc, classifyFailure, expirationForPreset, isApprovedAnnouncementActionUrl, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft } from "../admin/core.js";
 
 const base = { id: "notice-1", title: "Service notice", message: "Updates may be delayed.", severity: "information", startsAt: "2026-07-20T12:00", expiresAt: "2026-07-20T13:00", actionTitle: "", actionUrl: "", scope: "all", beachIds: [] };
 const now = new Date("2026-07-20T12:30:00Z");
@@ -20,6 +21,22 @@ test("validates and labels announcement beach targeting", () => {
   assert.equal(announcementScopeLabel({}), "All Beaches");
   assert.ok(validateDraft({ ...targeted, beachIds: ["unknown"] }).scope);
   assert.ok(validateDraft({ ...targeted, beachIds: [] }).scope);
+});
+test("audience controls default to All Beaches without disabling individual beaches", () => {
+  const html = readFileSync(new URL("../admin/index.html", import.meta.url), "utf8");
+  const fieldset = html.match(/<fieldset id="audience-fieldset">[\s\S]*?<\/fieldset>/)?.[0] || "";
+  assert.match(fieldset, /id="scope-all" type="checkbox" checked/);
+  assert.equal((fieldset.match(/name="beach-id"/g) || []).length, 4);
+  assert.doesNotMatch(fieldset, /\bdisabled\b/);
+});
+test("audience selection transitions are never empty", () => {
+  let audience = audienceAfterBeachChange([], "gulf-shores", true);
+  assert.deepEqual(audience, { scope: "beaches", beachIds: ["gulf-shores"] });
+  audience = audienceAfterBeachChange(audience.beachIds, "orange-beach", true);
+  assert.deepEqual(audience, { scope: "beaches", beachIds: ["gulf-shores", "orange-beach"] });
+  assert.deepEqual(audienceAfterAllBeachesChange(true, audience.beachIds), { scope: "all", beachIds: [] });
+  assert.deepEqual(audienceAfterBeachChange(["gulf-shores"], "gulf-shores", false), { scope: "all", beachIds: [] });
+  assert.deepEqual(audienceAfterAllBeachesChange(false, []), { scope: "all", beachIds: [] });
 });
 test("rejects missing content and unsupported severity", () => {
   const errors = validateDraft({ ...base, id: "bad id", title: "", message: "<b>unsafe</b>", severity: "warning" }, new Date("2026-07-20T11:00:00Z"));

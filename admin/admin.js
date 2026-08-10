@@ -1,4 +1,4 @@
-import { API_BASE, TEMPLATES, announcementScopeLabel, centralInputToUtc, expirationForPreset, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260810-1";
+import { API_BASE, TEMPLATES, announcementScopeLabel, audienceAfterAllBeachesChange, audienceAfterBeachChange, centralInputToUtc, expirationForPreset, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260810-2";
 
 const $ = (selector) => document.querySelector(selector);
 const form = $("#announcement-form");
@@ -14,7 +14,11 @@ const beachInputs = [...document.querySelectorAll("input[name='beach-id']")];
 
 function setAudience(scope = "all", beachIds = []) {
   allBeaches.checked = scope !== "beaches";
-  beachInputs.forEach((input) => { input.checked = scope === "beaches" && beachIds.includes(input.value); input.disabled = allBeaches.checked; });
+  beachInputs.forEach((input) => { input.checked = scope === "beaches" && beachIds.includes(input.value); });
+}
+
+function selectedBeachIds() {
+  return beachInputs.filter(({ checked }) => checked).map(({ value }) => value);
 }
 
 function freshDefaults() {
@@ -36,7 +40,7 @@ function draft() {
     id: fields.id.value, title: fields.title.value, message: fields.message.value, severity: fields.severity.value,
     startsAt: $("input[name='start-mode']:checked").value === "now" ? localInputValue(new Date()) : fields.startsAt.value,
     expiresAt: fields.expiresAt.value, actionTitle: fields.actionTitle.value, actionUrl: fields.actionUrl.value,
-    scope: allBeaches.checked ? "all" : "beaches", beachIds: beachInputs.filter(({ checked }) => checked).map(({ value }) => value)
+    scope: allBeaches.checked ? "all" : "beaches", beachIds: selectedBeachIds()
   };
 }
 
@@ -194,12 +198,13 @@ $("#template").addEventListener("change", (event) => {
 form.addEventListener("input", () => { updatePreview(); updateCounters(); });
 form.addEventListener("change", updatePreview);
 allBeaches.addEventListener("change", () => {
-  if (allBeaches.checked) setAudience("all");
-  else beachInputs.forEach((input) => { input.disabled = false; });
+  const audience = audienceAfterAllBeachesChange(allBeaches.checked, selectedBeachIds());
+  setAudience(audience.scope, audience.beachIds);
 });
 beachInputs.forEach((input) => input.addEventListener("change", () => {
-  if (input.checked) allBeaches.checked = false;
-  if (!beachInputs.some(({ checked }) => checked)) setAudience("all");
+  const previouslySelected = selectedBeachIds().filter((id) => id !== input.value);
+  const audience = audienceAfterBeachChange(previouslySelected, input.value, input.checked);
+  setAudience(audience.scope, audience.beachIds);
 }));
 document.querySelectorAll("input[name='start-mode']").forEach((radio) => radio.addEventListener("change", () => { $("#start-time-wrap").hidden = radio.value !== "later" || !radio.checked; if (radio.checked && radio.value === "later") fields.startsAt.value = localInputValue(new Date(Date.now() + 15 * 60000)); }));
 $("#expiration-presets").addEventListener("click", (event) => {

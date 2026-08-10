@@ -6,6 +6,15 @@ export const BEACHES = Object.freeze([
   { id: "fort-morgan", name: "Fort Morgan" },
   { id: "dauphin-island", name: "Dauphin Island" }
 ]);
+export function audienceAfterBeachChange(beachIds, beachId, checked) {
+  const selected = new Set(beachIds);
+  if (checked) selected.add(beachId); else selected.delete(beachId);
+  return selected.size ? { scope: "beaches", beachIds: [...selected] } : { scope: "all", beachIds: [] };
+}
+
+export function audienceAfterAllBeachesChange(checked, beachIds) {
+  return checked || !beachIds.length ? { scope: "all", beachIds: [] } : { scope: "beaches", beachIds: [...beachIds] };
+}
 export const ANNOUNCEMENT_TIME_ZONE = "America/Chicago";
 export const ACTION_URL_POLICY_MESSAGE = "Use an approved HTTPS link on alabamabeachflag.com or the American Red Cross, without credentials, a port, or a fragment.";
 export const ANNOUNCEMENT_ACTION_RULES = Object.freeze({
