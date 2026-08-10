@@ -133,3 +133,14 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(css, /attention-row/);
   assert.match(css, /source-change table/);
 });
+
+test("event writes use per-record locks and conditional revisions", async () => {
+  const source = await import("node:fs/promises").then((fs) => fs.readFile(new URL("../admin/events/events.js", import.meta.url), "utf8"));
+  assert.match(source, /const eventMutations = new Set\(\)/);
+  assert.match(source, /eventMutations\.has\(event\.id\)/);
+  assert.match(source, /eventMutations\.add\(event\.id\)/);
+  assert.match(source, /eventMutations\.delete\(event\.id\)/);
+  assert.match(source, /"If-Match":event\.revision/);
+  assert.match(source, /response\.status===412/);
+  assert.match(source, /current event has been refreshed; review it before retrying/);
+});

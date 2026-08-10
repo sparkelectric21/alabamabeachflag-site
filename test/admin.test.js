@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ACTION_URL_POLICY_MESSAGE, TEMPLATES, announcementScopeLabel, audienceAfterAllBeachesChange, audienceAfterBeachChange, centralDateId, centralInputToUtc, classifyFailure, expirationForPreset, isApprovedAnnouncementActionUrl, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft } from "../admin/core.js";
+import { ACTION_URL_POLICY_MESSAGE, TEMPLATES, announcementScopeLabel, announcementStoredStatus, audienceAfterAllBeachesChange, audienceAfterBeachChange, centralDateId, centralInputToUtc, classifyFailure, expirationForPreset, isApprovedAnnouncementActionUrl, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft } from "../admin/core.js";
 
 const base = { id: "notice-1", title: "Service notice", message: "Updates may be delayed.", severity: "information", startsAt: "2026-07-20T12:00", expiresAt: "2026-07-20T13:00", actionTitle: "", actionUrl: "", scope: "all", beachIds: [] };
 const now = new Date("2026-07-20T12:30:00Z");
@@ -21,6 +21,23 @@ test("validates and labels announcement beach targeting", () => {
   assert.equal(announcementScopeLabel({}), "All Beaches");
   assert.ok(validateDraft({ ...targeted, beachIds: ["unknown"] }).scope);
   assert.ok(validateDraft({ ...targeted, beachIds: [] }).scope);
+});
+
+test("classifies stored announcements as none, scheduled, active, or expired", () => {
+  const now = new Date("2026-08-10T18:00:00Z");
+  assert.equal(announcementStoredStatus(null, now), "none");
+  assert.equal(announcementStoredStatus({ startsAt: "2026-08-10T19:00:00Z", expiresAt: "2026-08-10T20:00:00Z" }, now), "scheduled");
+  assert.equal(announcementStoredStatus({ startsAt: "2026-08-10T17:00:00Z", expiresAt: "2026-08-10T20:00:00Z" }, now), "active");
+  assert.equal(announcementStoredStatus({ startsAt: "2026-08-10T16:00:00Z", expiresAt: "2026-08-10T18:00:00Z" }, now), "expired");
+});
+
+test("announcement admin reads stored state and uses revisions for replace and clear", async () => {
+  const source = await import("node:fs/promises").then((fs) => fs.readFile(new URL("../admin/admin.js", import.meta.url), "utf8"));
+  assert.match(source, /\/admin\/app-announcement/);
+  assert.match(source, /"If-Match": currentAnnouncement\.revision/);
+  assert.match(source, /response\.status === 412/);
+  assert.match(source, /Your draft was preserved/);
+  assert.match(source, /await refreshStatus\(\)/);
 });
 test("audience controls default to All Beaches without disabling individual beaches", () => {
   const html = readFileSync(new URL("../admin/index.html", import.meta.url), "utf8");

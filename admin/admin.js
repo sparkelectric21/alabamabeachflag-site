@@ -1,4 +1,4 @@
-import { API_BASE, TEMPLATES, announcementScopeLabel, audienceAfterAllBeachesChange, audienceAfterBeachChange, centralInputToUtc, expirationForPreset, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260810-2";
+import { API_BASE, TEMPLATES, announcementScopeLabel, announcementStoredStatus, audienceAfterAllBeachesChange, audienceAfterBeachChange, centralInputToUtc, expirationForPreset, jellyfishTemplateDraft, localInputValue, payloadFromDraft, validateDraft, classifyFailure } from "./core.js?v=20260810-2";
 
 const $ = (selector) => document.querySelector(selector);
 const form = $("#announcement-form");
@@ -7,6 +7,7 @@ const fields = {
   startsAt: $("#starts-at"), expiresAt: $("#expires-at"), actionTitle: $("#action-title"), actionUrl: $("#action-url")
 };
 let currentAnnouncement = null;
+let currentAnnouncementStatus = "none";
 let pendingPayload = null;
 let busy = false;
 const allBeaches = $("#scope-all");
@@ -83,7 +84,7 @@ function notify(message, error = false) {
 }
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" }).format(new Date(value));
 }
 
 function appendDetail(list, label, value, className = "") {
@@ -92,16 +93,17 @@ function appendDetail(list, label, value, className = "") {
   list.append(dt, dd);
 }
 
-function renderStatus(announcement) {
+function renderStatus(announcement, storedStatus = "none") {
   const container = $("#current-status"); container.replaceChildren();
   const badge = $("#status-badge");
   if (!announcement) {
     badge.textContent = "Inactive"; badge.className = "badge";
-    const heading = document.createElement("h3"); heading.textContent = "No active announcement";
-    const text = document.createElement("p"); text.className = "muted"; text.textContent = "Nothing is currently visible in the app.";
+    const heading = document.createElement("h3"); heading.textContent = "No stored announcement";
+    const text = document.createElement("p"); text.className = "muted"; text.textContent = "There is no active, scheduled, or expired announcement stored.";
     container.append(heading, text); $("#status-actions").hidden = true; return;
   }
-  badge.textContent = "Active"; badge.className = "badge active";
+  const statusLabel = ({ active: "Active", scheduled: "Scheduled", expired: "Expired" })[storedStatus] || "Stored";
+  badge.textContent = statusLabel; badge.className = `badge ${storedStatus === "active" ? "active" : ""}`;
   const list = document.createElement("dl"); list.className = "status-list";
   appendDetail(list, "Severity", announcement.severity);
   appendDetail(list, "Applies to", announcementScopeLabel(announcement));
@@ -125,7 +127,8 @@ async function apiRequest(path, options = {}) {
     if (contentType.includes("application/json")) {
       try { const body = await response.json(); detail = typeof body.message === "string" ? ` ${body.message}` : ""; } catch { /* readable fallback below */ }
     }
-    throw new Error(`${classifyFailure({ status: response.status, redirected: response.redirected, contentType })}${detail}`);
+    const error = new Error(response.status === 412 ? "This announcement changed elsewhere. Your draft was preserved; review the refreshed stored announcement before retrying." : `${classifyFailure({ status: response.status, redirected: response.redirected, contentType })}${detail}`);
+    error.status = response.status; throw error;
   }
   return response.json();
 }
@@ -133,8 +136,8 @@ async function apiRequest(path, options = {}) {
 async function refreshStatus({ announce = false } = {}) {
   $("#refresh").disabled = true;
   try {
-    const body = await apiRequest("/v1/app-announcement", { cache: "no-store" });
-    currentAnnouncement = body.announcement; renderStatus(currentAnnouncement);
+    const body = await apiRequest("/admin/app-announcement", { cache: "no-store", headers: { Accept: "application/json" } });
+    currentAnnouncement = body.announcement; currentAnnouncementStatus = body.status; renderStatus(currentAnnouncement, currentAnnouncementStatus);
     if (announce) notify("Current status refreshed.");
   } catch (error) { notify(error.message, true); $("#status-badge").textContent = "Unavailable"; }
   finally { $("#refresh").disabled = false; }
@@ -149,10 +152,11 @@ async function publish() {
   if (busy || !pendingPayload) return;
   setBusy(true);
   try {
-    const body = await apiRequest("/internal/app-announcement", { method: "PUT", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(pendingPayload) });
-    currentAnnouncement = body.announcement; renderStatus(currentAnnouncement);
+    const headers = { "Content-Type": "application/json", "Accept": "application/json", ...(currentAnnouncement?.revision ? { "If-Match": currentAnnouncement.revision } : {}) };
+    const body = await apiRequest("/internal/app-announcement", { method: "PUT", headers, body: JSON.stringify(pendingPayload) });
+    currentAnnouncement = body.announcement; currentAnnouncementStatus = announcementStoredStatus(currentAnnouncement); renderStatus(currentAnnouncement, currentAnnouncementStatus);
     notify(`Announcement published. Revision ${body.announcement.revision}. Allow a few minutes for public caches and KV propagation.`);
-  } catch (error) { notify(error.message, true); }
+  } catch (error) { notify(error.message, true); if (error.status === 412) await refreshStatus(); }
   finally { pendingPayload = null; setBusy(false); }
 }
 
@@ -177,8 +181,8 @@ $("#confirm-dialog").addEventListener("close", () => { if ($("#confirm-dialog").
 $("#clear-dialog").addEventListener("close", async () => {
   if ($("#clear-dialog").returnValue !== "confirm" || busy) return;
   setBusy(true, "Clearing…");
-  try { await apiRequest("/internal/app-announcement", { method: "DELETE", headers: { "Accept": "application/json" } }); currentAnnouncement = null; renderStatus(null); notify("Announcement cleared. Allow a few minutes for public caches and KV propagation."); }
-  catch (error) { notify(error.message, true); } finally { setBusy(false); }
+  try { await apiRequest("/internal/app-announcement", { method: "DELETE", headers: { "Accept": "application/json", "If-Match": currentAnnouncement.revision } }); currentAnnouncement = null; currentAnnouncementStatus = "none"; renderStatus(null); notify("Announcement cleared. Allow a few minutes for public caches and KV propagation."); }
+  catch (error) { notify(error.message, true); if (error.status === 412) await refreshStatus(); } finally { setBusy(false); }
 });
 
 $("#template").addEventListener("change", (event) => {

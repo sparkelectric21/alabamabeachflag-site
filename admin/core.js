@@ -152,6 +152,12 @@ export function announcementScopeLabel(announcement) {
   return announcement.beachIds.map((id) => names.get(id) || id).join(", ");
 }
 
+export function announcementStoredStatus(announcement, now = new Date()) {
+  if (!announcement) return "none";
+  if (now < new Date(announcement.startsAt)) return "scheduled";
+  return now >= new Date(announcement.expiresAt) ? "expired" : "active";
+}
+
 export function classifyFailure({ status = 0, redirected = false, contentType = "", network = false }) {
   if (network) return "Could not reach the announcement service. Check your connection and try again.";
   if (redirected || contentType.includes("text/html")) return "Your Cloudflare Access session may have expired. Re-authenticate, then try again.";
