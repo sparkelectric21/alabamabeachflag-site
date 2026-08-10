@@ -1,4 +1,4 @@
-import { CONTROL_ENDPOINT, IMPACT, PUBLIC_CONFIGURATION_ENDPOINT, auditRecordFields, auditUrl, canApplyTransition, classifyAuditFailure, classifyControlFailure, criticalConfirmationPhrase, expiryForPreset, parseAuditPage, publicRevisionStatus, summarizeControls, validateTransition } from "./core.js";
+import { CONTROL_ENDPOINT, IMPACT, PUBLIC_CONFIGURATION_ENDPOINT, ambiguousMutationOutcome, auditRecordFields, auditUrl, canApplyTransition, classifyAuditFailure, classifyControlFailure, criticalConfirmationPhrase, expiryForPreset, parseAuditPage, publicRevisionStatus, summarizeControls, validateTransition } from "./core.js";
 
 const $ = (selector) => document.querySelector(selector);
 const label = (value) => String(value).replaceAll(".", " › ").replaceAll(/([A-Z])/g, " $1");
@@ -18,6 +18,7 @@ const stateClass = (state) => ({ enabled: "enabled", monitorOnly: "monitor-only"
 let current = null;
 let auditCursor = null;
 let auditLoading = false;
+let mutationInFlight = false;
 const auditIds = new Set();
 
 function show(message, error = false) { const node = $("#alert"); node.textContent = message; node.classList.toggle("error", error); node.hidden = false; }
@@ -113,6 +114,7 @@ $("#load-more-audit").addEventListener("click", () => { if (auditCursor) loadAud
 
 $("#control-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (mutationInFlight) return;
   const state = $("#state").value;
   const draft = { controlId: $("#control").value, state, reasonCode: $("#reason-code").value, operatorReason: $("#operator-reason").value, incidentId: $("#incident-id").value.trim() || undefined, expiresAt: state === "enabled" ? undefined : expiryForPreset($("#duration").value), onExpiry: $("#expiry-behavior").value };
   const errors = validateTransition(draft); if (Object.keys(errors).length) return show(Object.values(errors).join(" "), true);
@@ -130,9 +132,18 @@ $("#control-form").addEventListener("submit", async (event) => {
   $("#confirmation-phrase").removeEventListener("input", updateApply);
   if (!confirmed) return;
   if (!canApplyTransition({ draft, revision: current?.revision === reviewRevision ? reviewRevision : null, requiredPhrase, confirmation: $("#confirmation-phrase").value })) return show("Confirmation requirements are no longer satisfied. No change was sent.", true);
-  const response = await fetch(CONTROL_ENDPOINT, { method: "PATCH", credentials: "include", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json", "If-Match": reviewRevision }, body: JSON.stringify(draft) });
-  if (!response.ok || response.redirected) return show(classifyControlFailure(response), true);
-  render(await response.json()); show("Control changed. Verify the public revision before declaring propagation complete."); await loadAudit();
+  mutationInFlight = true; const mutationControls = [...document.querySelectorAll("#control-form button, #control-form input, #control-form select, #control-form textarea, #apply-confirm")], priorDisabled = new Map(mutationControls.map(control => [control, control.disabled])); mutationControls.forEach(control => control.disabled = true);
+  const beforeState = current.controls?.[draft.controlId]?.state;
+  try {
+    let response, successfulPayload = null;
+    try { response = await fetch(CONTROL_ENDPOINT, { method: "PATCH", credentials: "include", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json", "If-Match": reviewRevision }, body: JSON.stringify(draft) }); }
+    catch { response = null; }
+    if (response && (!response.ok || response.redirected)) return show(classifyControlFailure(response), true);
+    if (response) { try { successfulPayload = await response.json(); if (!successfulPayload?.configuration?.revision) throw new TypeError(); } catch { response = null; } }
+    if (response) { render(successfulPayload); try { await refresh(); show("Control changed. Authoritative protected and public configuration were refreshed."); } catch { show("Control change was accepted, but the authoritative reread could not be completed. Refresh before declaring propagation complete.", true); } await loadAudit(); return; }
+    let reread = null; try { await refresh(); reread = current; } catch {}
+    const outcome = ambiguousMutationOutcome({ beforeRevision: reviewRevision, beforeState, refreshed: reread, draft }); show(outcome.message, outcome.kind !== "applied"); await loadAudit();
+  } finally { mutationInFlight = false; mutationControls.forEach(control => control.disabled = priorDisabled.get(control)); updateActionStyle(); }
 });
 
 $("#copy-prompt").addEventListener("click", async () => {

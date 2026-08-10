@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { AUDIT_ENDPOINT, CONTROL_ENDPOINT, IMPACT, auditRecordFields, auditUrl, canApplyTransition, classifyAuditFailure, classifyControlFailure, confirmationMatches, criticalConfirmationPhrase, expiryForPreset, parseAuditPage, publicRevisionStatus, requiresCriticalConfirmation, summarizeControls, validateTransition } from "../admin/operational-control/core.js";
+import { AUDIT_ENDPOINT, CONTROL_ENDPOINT, IMPACT, ambiguousMutationOutcome, auditRecordFields, auditUrl, canApplyTransition, classifyAuditFailure, classifyControlFailure, confirmationMatches, criticalConfirmationPhrase, expiryForPreset, parseAuditPage, publicRevisionStatus, requiresCriticalConfirmation, summarizeControls, validateTransition } from "../admin/operational-control/core.js";
 
 test("uses protected same-origin operational-control endpoint", () => assert.equal(CONTROL_ENDPOINT, "/admin/service/admin/operational-control"));
 test("previews provider inheritance and independent Orange Beach impact", () => { assert.match(IMPACT["providers.gulfShoresFlags"], /Fort Morgan/); assert.match(IMPACT["providers.orangeBeachFlags"], /Orange Beach locations only/); });
@@ -61,3 +61,6 @@ test("includes emergency response workflows and a production-mutation guard", ()
   assert.match(html, /Do not mutate production/); assert.match(html, /unavailable is safer/);
   assert.match(html, /Provider Health/); assert.match(html, /Public v2 flags/);
 });
+test("classifies ambiguous mutation rereads without overstating the outcome", () => { const base={beforeRevision:"r1",beforeState:"enabled",draft:{controlId:"domains.beachFlags",state:"disabled"}}; assert.equal(ambiguousMutationOutcome({...base,refreshed:{revision:"r2",controls:{"domains.beachFlags":{state:"disabled"}}}}).kind,"applied"); assert.equal(ambiguousMutationOutcome({...base,refreshed:{revision:"r1",controls:{"domains.beachFlags":{state:"enabled"}}}}).kind,"unchanged"); assert.equal(ambiguousMutationOutcome({...base,refreshed:null}).kind,"indeterminate"); });
+test("final mutation prevents duplicates, rereads ambiguity, and restores controls", () => { const source=readFileSync(new URL("../admin/operational-control/operational-control.js",import.meta.url),"utf8"); assert.match(source,/if \(mutationInFlight\) return/); assert.match(source,/catch \{ response = null; \}/); assert.match(source,/ambiguousMutationOutcome/); assert.match(source,/finally \{ mutationInFlight = false/); assert.match(source,/priorDisabled\.get\(control\)/); });
+test("a confirmed response remains explicit when its authoritative reread fails", () => { const source=readFileSync(new URL("../admin/operational-control/operational-control.js",import.meta.url),"utf8"); assert.match(source,/render\(successfulPayload\)/); assert.match(source,/Control change was accepted, but the authoritative reread could not be completed/); assert.doesNotMatch(source,/PATCH[\s\S]*?catch[\s\S]*?method: "PATCH"/); });

@@ -103,3 +103,10 @@ export function classifyControlFailure(response) {
   if (response.status === 401 || response.status === 403 || response.redirected) return "Your Cloudflare Access session may have expired.";
   return "The operational-control request failed. No state change was assumed.";
 }
+export function ambiguousMutationOutcome({ beforeRevision, beforeState, refreshed, draft }) {
+  if (!refreshed?.revision) return { kind: "indeterminate", message: "Change not confirmed. The authoritative configuration could not be reread; do not retry until state is verified." };
+  const state = refreshed.controls?.[draft.controlId]?.state;
+  if (refreshed.revision !== beforeRevision && state === draft.state) return { kind: "applied", message: "Change confirmed by authoritative reread after the response was lost." };
+  if (refreshed.revision === beforeRevision && state === beforeState) return { kind: "unchanged", message: "Change not confirmed. Authoritative reread confirms that configuration did not change; review before retrying." };
+  return { kind: "indeterminate", message: "Change not confirmed. Authoritative state changed, but it does not conclusively match this request; review before any retry." };
+}
