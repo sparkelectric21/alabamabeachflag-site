@@ -10,6 +10,12 @@ test("offers an isolated Beach Activity notification control", () => {
   assert.match(html, /value="notifications\.beachActivity"/);
   assert.match(IMPACT["notifications.beachActivity"], /email delivery only/);
 });
+test("offers an isolated, guarded Vibrio awareness kill switch", () => {
+  const html = readFileSync(new URL("../admin/operational-control/index.html", import.meta.url), "utf8");
+  assert.match(html, /value="domains\.vibrioAwareness"/);
+  assert.match(IMPACT["domains.vibrioAwareness"], /water quality/);
+  assert.equal(criticalConfirmationPhrase("domains.vibrioAwareness", "disabled"), "DISABLE VIBRIO AWARENESS");
+});
 test("requires critical confirmation for broad disables", () => { assert.equal(requiresCriticalConfirmation("global.liveData", "disabled"), true); assert.equal(requiresCriticalConfirmation("providers.orangeBeachFlags", "disabled"), false); });
 test("validates expiry and restore reasons", () => { const now = new Date("2026-07-21T20:00:00Z"); assert.deepEqual(validateTransition({ controlId: "domains.beachFlags", state: "disabled", reasonCode: "data_integrity", operatorReason: "Mismatch", expiresAt: expiryForPreset("1h", now) }, now), {}); assert.ok(validateTransition({ controlId: "domains.beachFlags", state: "disabled", reasonCode: "", operatorReason: "", expiresAt: null }, now).expiresAt); });
 test("surfaces revision conflicts", () => assert.match(classifyControlFailure({ status: 412, redirected: false }), /another session/));

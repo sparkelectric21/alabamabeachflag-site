@@ -6,6 +6,7 @@ export const IMPACT = {
   "global.liveData": "All live flag providers and beaches",
   "domains.beachFlags": "All beach-flag locations",
   "domains.beachEvents": "Beach Activity & Event Impact only",
+  "domains.vibrioAwareness": "Seasonal Vibrio awareness only; flags, water quality, weather, and ordinary water temperature remain available",
   "notifications.beachActivity": "Beach Activity review email delivery only",
   "providers.gulfShoresFlags": "Gulf Shores locations and inherited Fort Morgan",
   "providers.orangeBeachFlags": "Orange Beach locations only",
@@ -45,7 +46,7 @@ export function validateTransition(draft, now = new Date()) {
 }
 
 export function requiresCriticalConfirmation(controlId, state) {
-  return state === "disabled" && ["global.liveData", "domains.beachFlags", "domains.beachEvents"].includes(controlId);
+  return state === "disabled" && ["global.liveData", "domains.beachFlags", "domains.beachEvents", "domains.vibrioAwareness"].includes(controlId);
 }
 
 export function criticalConfirmationPhrase(controlId, state) {
@@ -53,6 +54,7 @@ export function criticalConfirmationPhrase(controlId, state) {
   if (controlId === "global.liveData") return "DISABLE LIVE DATA";
   if (controlId === "domains.beachFlags") return "DISABLE BEACH FLAGS";
   if (controlId === "domains.beachEvents") return "DISABLE BEACH EVENTS";
+  if (controlId === "domains.vibrioAwareness") return "DISABLE VIBRIO AWARENESS";
   return null;
 }
 
