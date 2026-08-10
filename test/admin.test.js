@@ -40,7 +40,7 @@ test("announcement admin reads stored state and uses revisions for replace and c
   assert.match(source, /await refreshStatus\(\)/);
 });
 test("audience controls default to All Beaches without disabling individual beaches", () => {
-  const html = readFileSync(new URL("../admin/index.html", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../admin/announcements/index.html", import.meta.url), "utf8");
   const fieldset = html.match(/<fieldset id="audience-fieldset">[\s\S]*?<\/fieldset>/)?.[0] || "";
   assert.match(fieldset, /id="scope-all" type="checkbox" checked/);
   assert.equal((fieldset.match(/name="beach-id"/g) || []).length, 4);

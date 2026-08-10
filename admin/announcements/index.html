@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Announcement Manager · Alabama Beach Flag</title>
+  <link rel="icon" href="../../favicon.png">
+  <link rel="stylesheet" href="../admin.css">
+  <link rel="stylesheet" href="../provider-health/provider-health.css">
+  <link rel="stylesheet" href="../responsive.css">
+  <script type="module" src="../navigation.js"></script>
+  <script type="module" src="../admin.js?v=20260810-2"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../../"><img src="../../logo-280.png" alt="" width="46" height="46"><span><strong>Alabama Beach Flag</strong><small>Announcement Manager</small></span></a>
+    <nav class="admin-nav" aria-label="Admin sections" data-open="false"><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="admin-sections"><span class="nav-toggle-label">Announcements</span><span class="nav-toggle-icon" aria-hidden="true">☰</span></button><div class="nav-links" id="admin-sections"><a href="../">Dashboard</a><a aria-current="page" href="./">Announcements</a><a href="../events/">Events</a><a href="../provider-health/">Provider Health</a><a href="../verification/">Verification</a><a href="../operational-control/">Operational Control</a><a href="../historical-data/">Historical Data</a><button id="refresh" class="button secondary" type="button">Refresh status</button></div></nav>
+  </header>
+  <main class="shell">
+    <div id="alert" class="alert" role="status" aria-live="polite" hidden></div>
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow">Private administration</p><h1 id="page-title">App announcements</h1><p>Create a temporary, clearly labeled notice for Alabama Beach Flag users.</p></div>
+      <div class="propagation"><strong>Allow a few minutes</strong><span>Public caches and KV updates may take time to propagate.</span></div>
+    </section>
+    <div class="layout">
+      <section class="panel editor" aria-labelledby="editor-title">
+        <div class="panel-heading"><div><p class="eyebrow">Compose</p><h2 id="editor-title">Announcement editor</h2></div><button id="reset" class="text-button" type="button">Reset</button></div>
+        <form id="announcement-form" novalidate>
+          <label>Template<select id="template"><option value="custom">Custom</option><option value="jellyfish">Jellyfish Reported</option><option value="provider-delay">Provider Delay</option><option value="data-unavailable">Data Temporarily Unavailable</option><option value="maintenance">Scheduled Maintenance</option><option value="update">New App Version Available</option><option value="general">General Information</option></select><small>Templates fill the form only; they never publish automatically.</small></label>
+          <label>Stable announcement ID<input id="id" name="id" maxlength="128" autocomplete="off" spellcheck="false" required><small>Keep this ID when revising the same event.</small><span class="field-error" data-error="id"></span></label>
+          <div class="field-grid"><label>Title<input id="title" name="title" maxlength="80" required><span class="counter" data-counter="title">0 / 80</span><span class="field-error" data-error="title"></span></label><label>Severity<select id="severity" name="severity"><option value="information">Information</option><option value="notice">Notice</option><option value="important">Important</option><option value="critical">Critical</option></select><span class="field-error" data-error="severity"></span></label></div>
+          <fieldset id="audience-fieldset"><legend>Applies to</legend><label class="choice audience-all"><input id="scope-all" type="checkbox" checked> All Beaches</label><div class="beach-choice-grid" id="beach-choices"><label class="choice"><input type="checkbox" name="beach-id" value="gulf-shores"> Gulf Shores</label><label class="choice"><input type="checkbox" name="beach-id" value="orange-beach"> Orange Beach</label><label class="choice"><input type="checkbox" name="beach-id" value="fort-morgan"> Fort Morgan</label><label class="choice"><input type="checkbox" name="beach-id" value="dauphin-island"> Dauphin Island</label></div><small>Choose All Beaches or one or more specific beaches.</small><span class="field-error" data-error="scope"></span></fieldset>
+          <label>Message<textarea id="message" name="message" rows="5" maxlength="500" required></textarea><span class="counter" data-counter="message">0 / 500</span><span class="field-error" data-error="message"></span></label>
+          <fieldset><legend>Start time</legend><div class="choice-row"><label class="choice"><input type="radio" name="start-mode" value="now" checked> Start immediately</label><label class="choice"><input type="radio" name="start-mode" value="later"> Schedule for later</label></div><label id="start-time-wrap" hidden>Scheduled start<input id="starts-at" name="starts-at" type="datetime-local"><span class="field-error" data-error="startsAt"></span></label></fieldset>
+          <fieldset><legend>Expiration</legend><div class="preset-grid" id="expiration-presets"><button type="button" data-preset="30m">30 minutes</button><button type="button" data-preset="1h">1 hour</button><button type="button" data-preset="4h">4 hours</button><button type="button" data-preset="midnight">Today at midnight</button><button type="button" data-preset="tomorrow">Tomorrow</button><button type="button" data-preset="custom">Custom</button></div><label>Expires at<input id="expires-at" name="expires-at" type="datetime-local" required><span class="field-error" data-error="expiresAt"></span></label></fieldset>
+          <fieldset><legend>Optional action</legend><div class="field-grid"><label>Button title<input id="action-title" name="action-title" maxlength="40" placeholder="Learn more"><span class="field-error" data-error="actionTitle"></span></label><label>HTTPS URL<input id="action-url" name="action-url" type="url" inputmode="url" placeholder="https://www.alabamabeachflag.com/"><span class="field-error" data-error="actionUrl"></span></label></div><span class="field-error" data-error="action"></span></fieldset>
+          <button id="publish" class="button primary full" type="submit">Publish announcement</button>
+        </form>
+      </section>
+      <aside class="side">
+        <section class="panel" aria-labelledby="preview-title"><div class="panel-heading"><div><p class="eyebrow">Live preview</p><h2 id="preview-title">In-app appearance</h2></div></div><div id="preview" class="preview" data-severity="information"><div class="preview-label"><span id="preview-icon" aria-hidden="true">ⓘ</span> Alabama Beach Flag app notice</div><button id="preview-dismiss" class="dismiss" type="button" tabindex="-1" aria-label="Dismiss preview">×</button><h3 id="preview-title-text">Your title</h3><p id="preview-message">Your message will appear here.</p><a id="preview-action" href="#" tabindex="-1" hidden>Learn more</a></div><p class="fine-print">Visual approximation only. The announcement service remains authoritative.</p></section>
+        <section class="panel" aria-labelledby="status-title"><div class="panel-heading"><div><p class="eyebrow">Published status</p><h2 id="status-title">Current announcement</h2></div><span id="status-badge" class="badge">Loading</span></div><div id="current-status" aria-live="polite"><p class="muted">Checking the service…</p></div><div id="status-actions" class="status-actions" hidden><button id="edit-current" class="button secondary" type="button">Edit or replace</button><button id="clear-current" class="button danger" type="button">Clear announcement</button></div></section>
+      </aside>
+    </div>
+  </main>
+  <dialog id="confirm-dialog"><form method="dialog"><p class="eyebrow">Confirm publication</p><h2 id="confirm-title">Publish this announcement?</h2><div id="confirm-summary"></div><p id="critical-warning" class="critical-warning" hidden><strong>Critical notices cannot be dismissed.</strong> Use critical only when persistent visibility is necessary.</p><div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button><button id="confirm-publish" class="button primary" value="confirm">Confirm and publish</button></div></form></dialog>
+  <dialog id="clear-dialog"><form method="dialog"><p class="eyebrow">Destructive action</p><h2>Clear the current announcement?</h2><p>It will stop appearing after public caches and KV changes propagate. This cannot be undone.</p><div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button><button id="confirm-clear" class="button danger" value="confirm">Clear announcement</button></div></form></dialog>
+</body>
+</html>
