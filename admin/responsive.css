@@ -12,6 +12,15 @@ body{min-width:0;overflow-x:hidden}
 .nav-toggle{display:none;align-items:center;gap:9px;border:1px solid #ffffff36;background:#ffffff14;color:#fff;border-radius:11px;padding:9px 11px;min-height:44px;font:inherit;font-weight:750;cursor:pointer}
 .nav-toggle-icon{font-size:1.15rem;line-height:1}
 input,textarea,select{max-width:100%;min-width:0;font-size:16px}
+.button,.text-button,.filter-buttons button,.preset-grid button,.pagination button{min-height:44px}
+.text-button{padding:10px 12px}
+.dismiss{min-width:44px;min-height:44px}
+.panel-heading>*{min-width:0}
+.panel-heading h1,.panel-heading h2,.panel-heading h3,.action-item,.event-row,.incident-card,.location-card,.run,.history-body{overflow-wrap:anywhere}
+.run{grid-template-columns:minmax(0,1fr) auto}
+.table-scroll{max-width:100%;overscroll-behavior-inline:contain}
+.table-scroll:focus-visible{outline:3px solid #61bce8;outline-offset:3px}
+dialog{max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
 .panel{max-width:100%}
 .status-list dd,.detail-list dd,.catalog-details dd,.report-details dd,.audit-record{overflow-wrap:anywhere;word-break:break-word}
 @media(max-width:980px){
@@ -33,7 +42,10 @@ input,textarea,select{max-width:100%;min-width:0;font-size:16px}
   .nav-toggle-label{max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .shell{padding:28px max(14px,env(safe-area-inset-left)) calc(50px + env(safe-area-inset-bottom))}
   .dialog-actions{flex-direction:column-reverse}.dialog-actions .button{width:100%}
+  dialog{width:calc(100% - 20px)!important;padding:20px!important}
+  .panel-heading{align-items:flex-start;flex-wrap:wrap}
+  .filter-actions,.pagination{display:grid!important;grid-template-columns:1fr 1fr}.filter-actions .button,.pagination .button{width:100%}
   .status-list{grid-template-columns:1fr;gap:2px}.status-list dd{margin-bottom:10px}.status-message{grid-column:auto}
 }
 @media(max-width:350px){.brand span{display:none}.preset-grid{grid-template-columns:1fr}}
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
