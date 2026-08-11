@@ -172,7 +172,9 @@ form.addEventListener("submit", (event) => {
   const times = document.createElement("div"); times.className = "confirm-times";
   const start = document.createElement("p"); start.textContent = `Starts: ${formatDate(pendingPayload.startsAt)}`;
   const end = document.createElement("p"); end.textContent = `Expires: ${formatDate(pendingPayload.expiresAt)}`;
-  times.append(start, end); summary.append(title, audience, times);
+  const message = document.createElement("p"); message.className = "confirm-message"; message.textContent = pendingPayload.message;
+  times.append(start, end); summary.append(title, audience, message, times);
+  if (pendingPayload.actionUrl) { const action = document.createElement("a"); action.className = "button secondary"; action.href = pendingPayload.actionUrl; action.target = "_blank"; action.rel = "noopener noreferrer"; action.textContent = pendingPayload.actionTitle || "Open announcement link"; summary.append(action); }
   $("#critical-warning").hidden = pendingPayload.severity !== "critical";
   $("#confirm-dialog").showModal();
 });
@@ -232,4 +234,5 @@ $("#refresh").addEventListener("click", () => refreshStatus({ announce: true }))
 $("#reset").addEventListener("click", () => { if (confirm("Discard the current draft and reset the editor?")) freshDefaults(); });
 
 freshDefaults();
+$("#edit-current").textContent = "Replace announcement";
 refreshStatus();

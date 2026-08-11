@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { archiveMatchesFilters, candidateMatchesQueue, eventMatchesQueue, matchSummary, refreshEmptyState, sourceChangeRows, statusSummary, validateEventDraft } from "../admin/events/core.js";
+import { archiveMatchesFilters, candidateMatchesQueue, eventMatchesQueue, eventTimingState, matchSummary, nextReviewId, refreshEmptyState, sourceChangeRows, statusSummary, validateEventDraft } from "../admin/events/core.js";
 
 const valid = {
   title: "Beach Cleanup", beachId: "gulf-shores-public-beach", venue: "Gulf Place",
@@ -9,6 +9,8 @@ const valid = {
   bannerTitle: "Beach cleanup here today", bannerMessage: "An activity is scheduled.",
   sourceURL: "https://example.gov/event"
 };
+
+test("review timing and next-item selection are deterministic", () => { assert.equal(eventTimingState({ sourceFacts: { sourceStatus: "postponed" } }), "postponed"); assert.equal(eventTimingState({}), "unavailable"); assert.equal(eventTimingState({ startAt: "2026-08-01T13:00:00Z", endTimeUnavailable: true }), "startOnly"); assert.equal(eventTimingState({ startAt: "2026-08-01", endAt: "2026-08-02", allDay: true }), "multiDay"); assert.equal(nextReviewId(["a", "b", "c"], "a", [{ id: "a", status: "approved" }, { id: "b", status: "pendingReview" }, { id: "c", status: "approved" }]), "b"); assert.equal(nextReviewId(["a", "b"], "a", [{ id: "a", status: "approved" }]), null); });
 
 test("manual event validation requires exact fields, ordered dates, known classifications, and HTTPS", () => {
   assert.deepEqual(validateEventDraft(valid), {});
@@ -101,7 +103,7 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(js, /No active provider coverage/);
   assert.match(js, /reasonDetail/);
   assert.match(js, /\["Public summary",event\.summary\]/);
-  assert.match(js, /\["Source calendar URL",event\.sourceCalendarURL\|\|event\.sourceURL\]/);
+  assert.match(js, /linkedDetail\("Source calendar URL",event\.sourceCalendarURL\|\|event\.sourceURL\)/);
   assert.match(js, /Original imported description/);
   assert.match(js, /sourceChangeSection/);
   assert.match(js, /auditSection/);

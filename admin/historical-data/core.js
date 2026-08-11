@@ -33,3 +33,13 @@ export function chartPoints(rows, width = 640, height = 150, valueKey = "inserte
   if (!rows.length) return ""; const values = rows.map(row => Number(row[valueKey] || 0)); const max = Math.max(...values, 1);
   return values.map((value, index) => `${rows.length === 1 ? width / 2 : index * width / (rows.length - 1)},${height - value / max * (height - 12)}`).join(" ");
 }
+export function chartSegments(rows, width = 640, height = 150, valueKey = "inserted", intervalMs = 3600000) {
+  if (!rows.length) return [];
+  const times = rows.map(row => Date.parse(row.bucket ?? row.hour ?? row.stored_at));
+  const validTimes = times.filter(Number.isFinite), start = Math.min(...validTimes), end = Math.max(...validTimes);
+  const values = rows.map(row => Number(row[valueKey] || 0)), max = Math.max(...values, 1);
+  const points = rows.map((row, index) => ({ time: times[index], point: `${start === end ? width / 2 : (times[index] - start) * width / (end - start)},${height - values[index] / max * (height - 12)}` }));
+  const segments = [];
+  for (const item of points) { const previous = segments.at(-1)?.at(-1); if (!previous || !Number.isFinite(item.time) || !Number.isFinite(previous.time) || item.time - previous.time > intervalMs * 1.5) segments.push([]); segments.at(-1).push(item); }
+  return segments.map(segment => segment.map(item => item.point).join(" "));
+}

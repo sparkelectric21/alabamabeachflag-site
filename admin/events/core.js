@@ -83,3 +83,18 @@ export function refreshEmptyState(refresh) {
   if (refresh.counts?.matched === 0) return "Events were fetched, but none matched a supported beach";
   return "Official event sources refreshed";
 }
+
+export function eventTimingState(event) {
+  if (event?.sourceFacts?.sourceStatus === "postponed" || event?.attentionFlags?.includes("sourcePostponed")) return "postponed";
+  if (!event?.startAt) return "unavailable";
+  if (event.allDay && event.endAt && String(event.startAt).slice(0, 10) !== String(event.endAt).slice(0, 10)) return "multiDay";
+  if (event.allDay) return "allDay";
+  if (event.endTimeUnavailable || !event.endAt) return "startOnly";
+  return "scheduled";
+}
+
+export function nextReviewId(orderedIds, currentId, events) {
+  const available = new Set(events.filter(event => event.status === "pendingReview").map(event => event.id));
+  const currentIndex = orderedIds.indexOf(currentId);
+  return orderedIds.slice(Math.max(0, currentIndex + 1)).find(id => available.has(id)) || orderedIds.slice(0, Math.max(0, currentIndex)).find(id => available.has(id)) || null;
+}
