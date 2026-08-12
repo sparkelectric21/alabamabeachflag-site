@@ -6,6 +6,7 @@ const pages = [
   "admin/index.html",
   "admin/announcements/index.html",
   "admin/events/index.html",
+  "admin/information-reports/index.html",
   "admin/provider-health/index.html",
   "admin/verification/index.html",
   "admin/operational-control/index.html",
@@ -13,7 +14,7 @@ const pages = [
 ];
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-const expectedOrder = ["Dashboard", "Announcements", "Events", "Provider Health", "Verification", "Operational Control", "Historical Data"];
+const expectedOrder = ["Dashboard", "Announcements", "Events", "Information Reports", "Provider Health", "Verification", "Operational Control", "Historical Data"];
 
 for (const path of pages) {
   test(`${path} uses the shared accessible admin navigation`, () => {
