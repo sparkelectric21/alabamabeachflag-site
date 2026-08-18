@@ -1,3 +1,5 @@
+import { installEnvironmentPresentation } from "./environment.js";
+
 const nav = document.querySelector(".admin-nav");
 const toggle = nav?.querySelector(".nav-toggle");
 const links = nav?.querySelector(".nav-links");
@@ -26,3 +28,4 @@ if (nav && toggle && links) {
     if (matches) close();
   });
 }
+installEnvironmentPresentation();

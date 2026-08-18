@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { archiveMatchesFilters, candidateMatchesQueue, eventMatchesQueue, eventTimingState, matchSummary, nextReviewId, refreshEmptyState, sourceChangeRows, statusSummary, validateEventDraft } from "../admin/events/core.js";
+import { appendDuplicateReview, archiveMatchesFilters, candidateMatchesQueue, confirmationPresentation, duplicateReviewPresentation, eventMatchesQueue, eventTimingState, locationPresentation, matchSummary, nextReviewId, refreshEmptyState, sourceChangeRows, statusSummary, validateEventDraft } from "../admin/events/core.js";
 
 const valid = {
   title: "Beach Cleanup", beachId: "gulf-shores-public-beach", venue: "Gulf Place",
@@ -39,10 +39,27 @@ test("event queues classify attention flags, provenance, and terminal states det
 test("review helpers explain deterministic matches and readable source diffs", () => {
   assert.equal(matchSummary({ matchMethod: "exactAddress", matchConfidence: "exact" }), "Exact beach-access address");
   assert.equal(matchSummary({ matchMethod: "adminOverride", matchConfidence: "admin" }), "Administrator assigned");
-  assert.deepEqual(sourceChangeRows({ sourceChange: { materialFields: ["startAt"], cosmeticFields: ["title"], previous: { startAt: "old", title: "Cleanup" }, current: { startAt: "new", title: "Cleanup!" } } }), [
-    { field: "startAt", before: "old", after: "new", material: true },
-    { field: "title", before: "Cleanup", after: "Cleanup!", material: false }
+  assert.deepEqual(sourceChangeRows({ sourceChange: { severity:"material",explanations:["Semantic schedule change"],materialFields: ["startAt"], cosmeticFields: ["title"], previous: { startAt: "old", title: "Cleanup" }, current: { startAt: "new", title: "Cleanup!" } } }), [
+    { field: "startAt", before: "old", after: "new", material: true,severity:"material",explanation:"Semantic schedule change" },
+    { field: "title", before: "Cleanup", after: "Cleanup!", material: false,severity:"material",explanation:"Semantic schedule change" }
   ]);
+  assert.match(matchSummary({matchMethod:"exactVenue",confirmation:{status:"suspectedMissing",reason:"complete feed omission",policyId:"daily-v1",successfulChecksAbsent:2},sourceChange:{severity:"material",explanations:["Semantic schedule change"]},confirmationAudit:{providerHealth:"degraded",qualifyingCompleteObservation:false},sourceObservations:[{observedAt:"2026-08-03T12:00:00Z",completeness:"partial",sourceReference:"https:\/\/example.gov\/events"}]}),/Suspected missing:.*Source change: material.*Provider overlay: degraded.*no qualifying absence observation.*Source observed 2026-08-03.*https:\/\/example.gov\/events/);
+});
+
+test("confirmation presentation distinguishes every operational lifecycle state",()=>{for(const [status,label] of Object.entries({confirmed:"Confirmed",aging:"Confirmation aging",suspectedMissing:"Suspected missing",sourceRemoved:"Removed at source",cancelled:"Cancelled",postponed:"Postponed",completed:"Completed",archived:"Completed and archived",manualReviewDue:"Manual review due"})){const view=confirmationPresentation({confirmation:{status,reason:"fixture",policyId:"daily-v1",successfulChecksAbsent:2,lastConfirmedAt:"2026-08-01T12:00:00Z",firstAbsentAt:"2026-08-02T12:00:00Z",observationCompleteness:"complete"}});assert.equal(view.state,label);assert.match(view.detail,/complete checks absent/)}assert.match(confirmationPresentation({}).detail,/Legacy event/)});
+
+test("duplicate review presents bounded side-by-side provenance and explained evidence",()=>{const events=[{id:"official",title:"Freedom Fest",startAt:"2026-09-01",endAt:"2026-09-02",venue:"Gulf Place",beachId:"gulf",sourceName:"City",status:"published",sourceRevision:"one",sourceFacts:{providerId:"city",externalId:"42"}},{id:"manual",title:"The Freedom Fest!",startAt:"2026-09-01",endAt:"2026-09-02",venue:"Gulf Place",beachId:"gulf",sourceName:"Manual",status:"pendingReview",sourceRevision:"two",sourceFacts:{providerId:"manual",externalId:"submission"},duplicateAssessment:{eventIds:["manual","official"],classification:"strongDuplicate",positiveEvidence:["Equal canonical official event URL"],conflictingEvidence:["Different organizer/source name"],titleTokens:{manual:["freedom","fest"],official:["freedom","fest"]},proposedCanonicalEventId:"official",proposedRelationship:"sameCanonicalEvent",recommendedAction:"reviewCanonicalLink"}}];const view=duplicateReviewPresentation(events[1],events);assert.deepEqual([view.left.id,view.right.id],["manual","official"]);assert.equal(view.left.authority,"Manual submission");assert.match(view.summary,/strongDuplicate.*Conflicts/);assert.match(matchSummary(events[1]),/Duplicate assessment: strongDuplicate/)});
+
+test("the review renderer mounts an actual side-by-side duplicate comparison",()=>{const nodes=[];const make=tag=>({tag,className:"",textContent:"",children:[],append(...items){this.children.push(...items)}}),container=make("div"),events=[{id:"a",title:"Cleanup",startAt:"2026-09-01",endAt:"2026-09-02",venue:"Beach",beachId:"gulf",sourceName:"Manual",status:"pendingReview",sourceRevision:"one",sourceFacts:{providerId:"manual",externalId:"a"},duplicateAssessment:{eventIds:["a","b"],classification:"likelyDuplicate",positiveEvidence:["Same time"],conflictingEvidence:["Different UID"],proposedCanonicalEventId:"b",proposedRelationship:"sameCanonicalEvent",recommendedAction:"reviewCanonicalLink"}},{id:"b",title:"Cleanup",startAt:"2026-09-01",endAt:"2026-09-02",venue:"Beach",beachId:"gulf",sourceName:"City",status:"published",sourceRevision:"two",sourceFacts:{providerId:"city",externalId:"b"}}];const section=appendDuplicateReview(container,events[0],events,tag=>{const node=make(tag);nodes.push(node);return node});assert.equal(container.children[0],section);assert.equal(section.className,"duplicate-review");assert.equal(nodes.filter(node=>node.tag==="article").length,2);assert.match(nodes.map(node=>node.textContent).join(" "),/Supporting evidence: Same time.*Conflicting evidence: Different UID.*Proposed canonical: b/)});
+
+test("location presentation distinguishes precision, evidence origin, legacy records, and conflicts", () => {
+  const exact={location:{classification:"beachSpecific",proposedBeachId:"cotton-bayou",assignmentOrigin:"source",evidence:[{supportsExact:true,value:"Exact approved venue"}],conflicts:[]}};
+  assert.deepEqual(locationPresentation(exact),{label:"At this beach",related:"cotton-bayou",evidence:["Supports exact: Exact approved venue"],conflicts:[],warning:false,origin:"Source-derived"});
+  const nearby={locationReviewRequired:true,location:{classification:"nearbyCoastal",proposedBeachId:"cotton-bayou",assignmentOrigin:"administrator",evidence:[{supportsExact:false,value:"The Wharf"}],conflicts:["Retained exact assignment is unsupported"]}};
+  assert.match(matchSummary(nearby),/^Nearby coastal .* REVIEW:/);
+  assert.equal(locationPresentation({matchMethod:"adminOverride"}).label,"Location classification not yet assessed");
+  assert.equal(locationPresentation({location:{classification:"regional",region:"Various locations",assignmentOrigin:"rule",evidence:[],conflicts:[]}}).label,"Regional");
+  assert.equal(locationPresentation({location:{classification:"irrelevant",assignmentOrigin:"rule",evidence:[],conflicts:[]}}).label,"Not beach relevant");
 });
 
 test("archive search and date, beach, provider, and terminal filters compose", () => {
@@ -106,6 +123,15 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(js, /linkedDetail\("Source calendar URL",event\.sourceCalendarURL\|\|event\.sourceURL\)/);
   assert.match(js, /Original imported description/);
   assert.match(js, /sourceChangeSection/);
+  assert.match(js, /appendLazyHistory/);
+  assert.match(js, /\/history\?kind=/);
+  assert.match(js, /Loading protected history/);
+  assert.match(js, /Load more/);
+  assert.match(js, /Retry loading more/);
+  assert.match(js, /model\.confirmationAudit/);
+  assert.match(js, /model\.sourceObservations/);
+  assert.match(js, /Previous approved/);
+  assert.match(js, /Severity and explanation/);
   assert.match(js, /auditSection/);
   assert.match(js, /Read-only archived record/);
   assert.match(js, /archiveMatchesFilters/);
@@ -123,6 +149,7 @@ test("events admin exposes protected manual refresh and responsive status layout
   assert.match(js, /Refresh status unavailable/);
   assert.match(js, /save\.textContent="Saving…"/);
   assert.match(js, /renderBeachReference/);
+	assert.match(js, /matchSummary\(event\)/);
   assert.match(js, /secondary-actions/);
   assert.match(js, /model\.coverage\.filter\(item=>item\.activeEvents>0\)/);
   assert.match(css, /overflow-wrap:anywhere/);

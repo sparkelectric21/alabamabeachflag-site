@@ -1,6 +1,39 @@
 export const EVENT_TYPES = ["festival","raceOrSport","beachCleanup","wildlife","conservation","educational","community","fireworksOrHoliday","accessOrParkingImpact","other"];
 export const IMPACT_LEVELS = ["informational","noticeable","high","major"];
 
+export function locationPresentation(event) {
+  const location=event?.location;
+  if(!location)return {label:"Location classification not yet assessed",related:"Legacy assignment retained",evidence:[],conflicts:[],warning:false,origin:event?.matchMethod==="adminOverride"?"Administrator":"Legacy / unknown"};
+  const labels={beachSpecific:"At this beach",nearbyCoastal:"Nearby coastal",regional:"Regional",irrelevant:"Not beach relevant"};
+  return {label:labels[location.classification]||location.precisionLabel||"Uncertain location",related:location.proposedBeachId||location.region||"No exact beach",evidence:(location.evidence||[]).map(item=>`${item.supportsExact?"Supports exact":"Context only"}: ${item.value}`),conflicts:location.conflicts||[],warning:Boolean(event.locationReviewRequired||(location.conflicts||[]).length),origin:location.assignmentOrigin==="administrator"?"Administrator":location.assignmentOrigin==="rule"?"Rule-derived":"Source-derived"};
+}
+
+export function confirmationPresentation(event) {
+  const value=event?.confirmation;
+  if(!value)return {state:"Confirmation metadata unavailable",detail:"Legacy event — current publication behavior retained",warning:false};
+  const labels={confirmed:"Confirmed",aging:"Confirmation aging",suspectedMissing:"Suspected missing",sourceRemoved:"Removed at source",cancelled:"Cancelled",postponed:"Postponed",completed:"Completed",archived:"Completed and archived",manualReviewDue:"Manual review due"};
+  const timing=[value.lastConfirmedAt?`last confirmed ${value.lastConfirmedAt}`:null,value.firstAbsentAt?`first absent ${value.firstAbsentAt}`:null,`${value.successfulChecksAbsent||0} complete checks absent`,value.policyId,value.observationCompleteness].filter(Boolean).join(" · ");
+  return {state:labels[value.status]||value.status,detail:`${timing} · ${value.reason||"No reason recorded"}`,warning:["suspectedMissing","sourceRemoved","cancelled","postponed","manualReviewDue"].includes(value.status)};
+}
+
+export function duplicateReviewPresentation(event, events=[]) {
+  const assessment=event?.duplicateAssessment||event?.duplicateCandidates?.[0]||(event?.possibleDuplicateOf?{eventIds:[event.id,event.possibleDuplicateOf],classification:"possibleDuplicate",positiveEvidence:["Legacy duplicate pointer — evidence unavailable"],conflictingEvidence:[],titleTokens:{},proposedRelationship:"keepSeparate",recommendedAction:"reviewPossibleDuplicate"}:null);
+  if(!assessment)return null;
+  const [leftId,rightId]=assessment.eventIds||[],left=events.find(item=>item.id===leftId)||(event.id===leftId?event:null),right=events.find(item=>item.id===rightId)||(event.id===rightId?event:null);
+  const side=item=>item?{id:item.id,provider:item.sourceFacts?.providerId||"unknown",authority:item.sourceFacts?.providerId==="manual"?"Manual submission":"Official/imported source",externalId:item.sourceFacts?.externalId||"unavailable",recurrenceId:item.sourceFacts?.recurrenceId,title:item.title,startAt:item.startAt,endAt:item.endAt,venue:item.venue,locationClass:item.location?.classification||item.locationClass||"legacy",relatedBeach:item.location?.proposedBeachId||item.beachId,organizer:item.sourceName,canonicalURL:item.officialEventURL||item.sourceFacts?.officialURL,status:item.status,sourceRevision:item.sourceRevision}:null;
+  return {classification:assessment.classification,left:side(left),right:side(right),titleTokens:assessment.titleTokens||{},positiveEvidence:assessment.positiveEvidence||[],conflictingEvidence:assessment.conflictingEvidence||[],proposedCanonicalEventId:assessment.proposedCanonicalEventId,proposedRelationship:assessment.proposedRelationship,recommendedAction:assessment.recommendedAction,summary:`${assessment.classification}: ${(assessment.positiveEvidence||[]).join("; ")||"no positive evidence"}${assessment.conflictingEvidence?.length?` · Conflicts: ${assessment.conflictingEvidence.join("; ")}`:""}`};
+}
+
+export function appendDuplicateReview(container,event,events,createElement) {
+  const view=duplicateReviewPresentation(event,events);if(!view?.left||!view?.right)return null;
+  const section=createElement("section"),heading=createElement("h3"),summary=createElement("p"),grid=createElement("div");
+  section.className="duplicate-review";heading.textContent="Possible duplicate comparison";summary.textContent=view.summary;grid.className="duplicate-review-grid";
+  const fields=["authority","provider","externalId","recurrenceId","title","startAt","endAt","venue","locationClass","relatedBeach","organizer","canonicalURL","status","sourceRevision"];
+  for(const side of [view.left,view.right]){const article=createElement("article"),title=createElement("h4");title.textContent=side.id;article.append(title);for(const field of fields){const row=createElement("p");row.textContent=`${field}: ${side[field]??"—"}`;article.append(row)}grid.append(article)}
+  const evidence=createElement("p");evidence.textContent=`Supporting evidence: ${view.positiveEvidence.join("; ")||"none"} · Conflicting evidence: ${view.conflictingEvidence.join("; ")||"none"} · Proposed canonical: ${view.proposedCanonicalEventId||"none"} · Relationship: ${view.proposedRelationship||"undecided"} · Recommended action: ${view.recommendedAction||"manual review"}`;
+  section.append(heading,summary,grid,evidence);container.append(section);return section;
+}
+
 export function validateEventDraft(draft) {
   const errors = {};
   if (!draft.title?.trim()) errors.title = "Enter an event title.";
@@ -62,16 +95,24 @@ export function sourceChangeRows(event) {
   const change = event.sourceChange;
   if (!change) return [];
   const fields = [...new Set([...(change.materialFields || []), ...(change.cosmeticFields || [])])];
-  return fields.map(field => ({ field, before: change.previous?.[field], after: change.current?.[field], material: (change.materialFields || []).includes(field) }));
+  return fields.map(field => ({ field, before: change.previous?.[field], after: change.current?.[field], material: (change.materialFields || []).includes(field), severity:change.severity||((change.materialFields||[]).includes(field)?"material":"cosmetic"), explanation:(change.explanations||[]).join("; ")||"Normalized source comparison" }));
 }
 
 export function matchSummary(event) {
-  if (event.matchConfidence === "ambiguous") return "Ambiguous source change — review required";
-  if (event.matchMethod === "adminOverride") return "Administrator assigned";
-  if (event.matchMethod === "exactVenue") return "Exact known venue";
-  if (event.matchMethod === "exactAddress") return "Exact beach-access address";
-  if (event.matchMethod === "sourceAlias") return "Known provider venue alias";
-  return event.matchExplanation || "Match method unavailable";
+  const location=locationPresentation(event);
+  const confirmation=confirmationPresentation(event),confirmationText=event.confirmation?` · ${confirmation.state}: ${confirmation.detail}${confirmation.warning?" — REVIEW":""}`:"";
+  const sourceChangeText=event.sourceChange?` · Source change: ${event.sourceChange.severity||"unclassified"}${event.sourceChange.explanations?.length?` — ${event.sourceChange.explanations.join("; ")}`:""}`:"";
+	const overlayText=event.confirmationAudit?` · Provider overlay: ${event.confirmationAudit.providerHealth} · ${event.confirmationAudit.qualifyingCompleteObservation?"qualifying complete observation":"no qualifying absence observation"}`:"";
+	const latestObservation=event.sourceObservations?.at(-1),observationText=latestObservation?` · Source observed ${latestObservation.observedAt} · ${latestObservation.completeness} · ${latestObservation.sourceReference||"reference unavailable"}`:"";
+	const duplicate=duplicateReviewPresentation(event),duplicateText=duplicate?` · Duplicate assessment: ${duplicate.summary}`:"";
+	if(event.location){const primaryEvidence=location.evidence.find(item=>item.startsWith("Supports exact:"))||location.evidence[0];const evidence=primaryEvidence?` · ${primaryEvidence}`:"";const conflict=location.warning?` · REVIEW: ${location.conflicts.join("; ")||"retained assignment conflicts with source evidence"}`:"";return `${location.label} · ${location.related} · ${location.origin}${evidence}${conflict}${confirmationText}${sourceChangeText}${overlayText}${observationText}${duplicateText}`;}
+	const match=event.matchConfidence === "ambiguous"?"Ambiguous source change — review required"
+    :event.matchMethod === "adminOverride"?"Administrator assigned"
+    :event.matchMethod === "exactVenue"?"Exact known venue"
+    :event.matchMethod === "exactAddress"?"Exact beach-access address"
+    :event.matchMethod === "sourceAlias"?"Known provider venue alias"
+    :event.matchExplanation||"Match method unavailable";
+  return `${match}${confirmationText}${sourceChangeText}${overlayText}${observationText}${duplicateText}`;
 }
 
 export function refreshEmptyState(refresh) {
